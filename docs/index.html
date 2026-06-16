@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCR Agent — Bitcoin Core Review Club AI Reviewer</title>
+  <meta name="description" content="AI-powered Bitcoin Core PR Review Club agent. Reads results from Nostr + Blossom.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-left">
+        <h1>BCR Agent</h1>
+        <span class="subtitle">Bitcoin Core PR Review Club — AI Reviewer</span>
+      </div>
+      <div class="header-right">
+        <a href="https://github.com/Amperstrand/bcr-agent" target="_blank" class="link">GitHub</a>
+        <span class="npub" title="Bot npub">npub1nfg4…8qtef</span>
+      </div>
+    </header>
+
+    <main>
+      <aside id="runs-list">
+        <div class="loading" id="runs-loading">Connecting to Nostr relays…</div>
+      </aside>
+
+      <section id="report-view">
+        <div class="empty-state">
+          <p>Select a workshop run to view the full AI analysis.</p>
+          <p class="hint">Runs are fetched live from Nostr relays.<br>Report content from <a href="https://blossom.psbt.me" target="_blank">blossom.psbt.me</a></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Powered by <a href="https://github.com/nostr-protocol/nips/blob/master/90.md" target="_blank">NIP-90 DVM</a> + <a href="https://github.com/hzrd149/blossom" target="_blank">Blossom</a> + <a href="https://opencode.ai" target="_blank">OpenCode</a> + <a href="https://z.ai" target="_blank">z.ai GLM</a></span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
