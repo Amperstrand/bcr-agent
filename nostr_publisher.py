@@ -243,6 +243,7 @@ def announce_completion(
     workshop_id: str,
     report_url: str,
     pr_title: str = "",
+    pr_url: str = "",
     metrics: dict = None,
     relays: list = None,
 ) -> list:
