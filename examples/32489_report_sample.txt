@@ -1,0 +1,206 @@
+======================================================================
+BITCOIN CORE PR REVIEW CLUB — AI AGENT BACKTEST REPORT
+======================================================================
+
+Workshop: wallet: Add exportwatchonlywallet RPC ( wallet , rpc )
+Workshop ID: 32489
+Date: Aug 6, 2025
+Host: ryanofsky
+PR Author: achow101
+PR URL: https://github.com/bitcoin/bitcoin/pull/32489
+Questions: 8
+Timestamp: 2026-06-16T09:51:29Z
+
+──────────────────────────────────────────────────────────────────────
+PER-QUESTION BREAKDOWN
+──────────────────────────────────────────────────────────────────────
+
+Q1 [Rating: ?/5] — Review approach Did you test, concept ACK, approach ACK, or NACK the PR? What as
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI correctly identified that the `CanSelfExpand()` method is critical for determining if descriptors can generate new addresses without private keys.
+    ✓ It correctly noted that `BIP32PubkeyProvider::CanSelfExpand()` returns false for hardened paths.
+    ✓ It understood that the implementation preserves wallet metadata and handles encrypted wallets properly.
+    ✓ It recognized the security implications of not including private keys in exports.
+  MISSED:
+    ✗ The AI didn't explain why existing methods like `IsRange()` and `IsSingleType()` are insufficient for determining if a descriptor can self-expand.
+    ✗ It didn't clarify that `CanSelfExpand()` searches descriptors recursively for hardened paths.
+    ✗ It didn't mention the specific behavior for `pkh(pubkey)` descriptors (which should be able to self-expand).
+    ✗ It didn't explain the role of `OriginPubkeyProvider` and how it delegates to the wrapped provider.
+    ✗ It didn't discuss the specific context of watch-only exports not containing private keys.
+  NOVEL (AI-only):
+    ★ The AI provided a detailed analysis of the implementation in `src/wallet/exports.cpp`, which wasn't mentioned in the IRC discussion.
+    ★ It raised specific concerns about testing coverage for large wallets and descriptor cache limits.
+    ★ It discussed potential performance issues for wallets with many transactions and mentioned the use of batch writes as a mitigation.
+  [Answered in 16.8s]
+
+Q2 [Rating: ?/5] — Descriptor API Why can’t the existing IsRange() / IsSingleType() information tel
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI correctly identified that `IsRange()` and `IsSingleType()` only provide structural information, not key availability information
+    ✓ The AI correctly explained that `wpkh(xpub/0h/*)` cannot self-expand due to the hardened path
+    ✓ The AI correctly explained that `pkh(pubkey)` can self-expand because it uses a constant public key
+    ✓ The AI correctly described the design implications for watch-only wallet exports
+  MISSED:
+    ✗ The AI didn't mention that `CanSelfExpand()` searches the descriptor recursively for hardened paths
+    ✗ The AI didn't address the confusion in the IRC discussion about whether `pkh(pubkey)` can self-expand (there was some disagreement among human reviewers)
+    ✗ The AI didn't explain the role of `OriginPubkeyProvider` and how it delegates to the wrapped provider's `CanSelfExpand()` implementation
+    ✗ The AI didn't mention the specific implementation detail that hardened paths require cache export in watch-only wallets
+  NOVEL (AI-only):
+    ★ The AI provided a clear distinction between "structure information" and "key availability information" which wasn't explicitly articulated in the IRC discussion
+    ★ The AI included specific code snippets from `src/script/descriptor.cpp` showing the implementation of `CanSelfExpand()` in `BIP32PubkeyProvider` and `ConstPubkeyProvider`
+    ★ The AI provided a more comprehensive explanation of the design implications for watch-only wallets than what was discussed in IRC
+  [Answered in 19.9s]
+
+Q3 [Rating: ?/5] — Cache copying ExportWatchOnlyWallet only copies the descriptor cache if !desc->C
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI correctly explained that the cache stores pre-computed expansion results for descriptors that cannot self-expand
+    ✓ It accurately described what's stored in the cache (scriptPubKeys, public keys, metadata)
+    ✓ It correctly identified that hardened descriptors cannot self-expand
+    ✓ It explained the performance implications of incomplete caches
+    ✓ It correctly identified specific descriptor types affected by incomplete caches (hardened paths, multi-signature descriptors, complex nested descriptors)
+  MISSED:
+    ✗ The AI didn't mention the recursive nature of CanSelfExpand() searching the descriptor for hardened paths
+    ✗ It didn't clarify that OriginPubkeyProvider simply wraps another pubkey provider without needing to derive anything
+    ✗ It didn't address the specific discussion about pkh(pubkey) and its self-expansion capabilities
+    ✗ It didn't mention that IsSingleType() was considered not relevant to the question
+  NOVEL (AI-only):
+    ★ The AI provided a detailed breakdown of performance degradation issues with incomplete caches
+    ★ It explained how an incomplete cache could affect "gap" usage in Bitcoin wallets
+    ★ It included specific code examples showing how different descriptor types implement CanSelfExpand()
+  [Answered in 22.8s]
+
+Q4 [Rating: ?/5] — Wallet flags The exporter sets create_flags = GetWalletFlags() | WALLET_FLAG_DIS
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI correctly identified that preserving wallet flags like `AVOID_REUSE` maintains behavioral consistency between the original and watch-only wallets.
+    ✓ The AI explained that preserving flags ensures proper address generation and metadata handling.
+    ✓ The AI mentioned that future compatibility is maintained by preserving existing flags.
+  MISSED:
+    ✗ The AI did not address the specific impact of `AVOID_REUSE` on `AvailableCoins` results and balance display, which was a key point in the IRC discussion.
+    ✗ The AI did not mention the need to call `keypoolrefill` before exporting to ensure sufficient pre-derived public keys.
+    ✗ The AI did not discuss the potential confusion users might face if balances appear different between the original and watch-only wallets.
+  NOVEL (AI-only):
+    ★ The AI provided a detailed explanation of how metadata like `previously_spent` works in conjunction with wallet flags.
+    ★ The AI explained the specific database options used when creating the watch-only wallet.
+    ★ The AI discussed potential issues in multi-environment setups if flags differ.
+  [Answered in 18.5s]
+
+Q5 [Rating: ?/5] — Best-block locator Why does the exporter read the locator from the source wallet
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI captured the general importance of preserving the best-block locator to avoid costly rescans and ensure immediate balance accuracy. It also correctly explained the technical implementation of how CBlockLocator works and its role in wallet functionality.
+  MISSED:
+    ✗ The AI did not discuss the preservation of wallet flags (like AVOID_REUSE) which was a major point in the IRC discussion
+    ✗ It missed the conversation about keypool size and pre-derived pubkeys
+    ✗ It did not address the specific impact of AVOID_REUSE on AvailableCoins results in watch-only wallets
+    ✗ The suggestion to refill the keypool before exporting was not mentioned
+  NOVEL (AI-only):
+    ★ The AI provided a more detailed technical explanation of how CBlockLocator works and its implementation in the code, including the specific code snippet showing how it's read and written during export. It also gave a more comprehensive explanation of the transaction history integrity aspects that weren't discussed in the IRC conversation.
+  [Answered in 19.7s]
+
+Q6 [Rating: ?/5] — Security / privacy Consider a multisig descriptor wsh(multi(2,xpub1,xpub2)) . If
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI answer did not capture any of the key technical insights from the IRC discussion. The AI focused on privacy implications of sharing watch-only wallets versus descriptors, while the IRC discussion was specifically about the `CanSelfExpand()` functionality and descriptor expansion capabilities.
+  MISSED:
+    ✗ The AI completely missed all the technical points discussed in the IRC, including:
+    ✗ - The `CanSelfExpand()` method and its purpose
+    ✗ - How hardened paths affect descriptor expansion
+    ✗ - The limitations of `IsRange()` and `IsSingleType()` methods
+    ✗ - The relationship between descriptor types and their ability to self-expand
+  NOVEL (AI-only):
+    ★ The AI provided several insights that were not discussed in the IRC:
+    ★ The complete address history disclosure in exported watch-only wallets
+    ★ Transaction history metadata including amounts and timestamps
+  [Answered in 16.2s]
+
+Q7 [Rating: ?/5] — Functional test In wallet_exported_watchonly.py , why does the test call wallet.
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI correctly identified that keypoolrefill ensures the wallet has enough pre-generated keys available for testing.
+    ✓ The AI explained the key pool mechanism in Bitcoin Core's wallet design.
+    ✓ The AI noted that without keypoolrefill, the test might run out of pre-generated keys and trigger on-demand generation, which could affect test consistency.
+  MISSED:
+    ✗ The AI did not specifically mention that the test generates a new address and prepares an incomplete transaction.
+    ✗ The AI did not explicitly state that the offline wallet needs to pre-compute addresses to be able to sign the transaction.
+    ✗ The AI did not mention that the offline wallet needs the corresponding private key for the specific address to sign the transaction.
+  NOVEL (AI-only):
+    ★ The AI provided a detailed explanation of the key pool mechanism in Bitcoin Core, including how it helps with privacy, performance, and security.
+    ★ The AI discussed potential edge cases and issues if the key pool isn't refilled, such as address generation problems and test reliability issues.
+    ★ The AI mentioned the specific implementation details from `src/wallet/keys.cpp`, which wasn't discussed in the IRC.
+  [Answered in 13.0s]
+
+Q8 [Rating: ?/5] — Alternatives Prior to this PR, users could achieve a watch-only setup via dumpwa
+──────────────────────────────────────────────────
+  CAPTURED:
+    ✓ The AI correctly identified the key differences in UX, completeness, and maintainability between the three approaches. It correctly noted that `exportwatchonlywallet` provides a complete wallet state including all metadata, transaction history, and settings. The AI also correctly identified that the new approach preserves wallet flags like `AVOID_REUSE` and avoids the need for rescanning by copying the best-block locator.
+  MISSED:
+    ✗ The AI did not discuss:
+    ✗ The specific role of the descriptor cache in storing pre-derived pubkeys for hardened paths
+    ✗ The recommendation to call `keypoolrefill` before exporting to ensure sufficient pre-derived addresses
+    ✗ The technical details of why `AVOID_REUSE` matters for watch-only wallets (affecting `AvailableCoins` and balance display)
+    ✗ The specific contents of the `DescriptorCache` (`CExtPubKey` objects)
+  NOVEL (AI-only):
+    ★ The AI provided a more structured comparative analysis than the IRC discussion, breaking down each approach into specific categories (UX, completeness, maintainability) and making clear recommendations. The AI also included code evidence from `src/wallet/export.cpp` to support its analysis, which was not present in the IRC discussion.
+  [Answered in 25.6s]
+
+──────────────────────────────────────────────────────────────────────
+KEY FINDINGS
+──────────────────────────────────────────────────────────────────────
+
+  Coverage: 20/49 human insights captured (41%)
+  Novel AI insights: 23
+  Human-only insights: 29
+
+  Common gaps in AI answers:
+    - Specific implementation details mentioned in IRC but not in PR diff
+    - Interactive clarifications and corrections between reviewers
+    - Points that emerged organically from back-and-forth discussion
+
+  Common strengths of AI answers:
+    - Structured, comprehensive coverage of the question as asked
+    - Additional code references and implementation details
+    - Performance and edge case analysis not discussed by humans
+
+──────────────────────────────────────────────────────────────────────
+AGENT ANSWER SAMPLES
+──────────────────────────────────────────────────────────────────────
+
+Q1: Review approach Did you test, concept ACK, approach ACK, or NACK the PR? What aspects did you focus 
+
+## Review approach Did you test, concept ACK, approach ACK, or NACK the PR? What aspects did you focus on during review?
+
+After reviewing this PR, I would provide a **Tested ACK** with some minor concerns. This is a significant feature addition that improves the air-gapped wallet workflow, and while the implementation looks solid, I'd want to verify it works as expected in practice.
+
+### Aspects I Focused On During Review
+
+1. **Core Functionality Correctness**
+   - The `CWallet::ExportWatchOnlyW
+... [truncated]
+
+Q2: Descriptor API Why can’t the existing IsRange() / IsSingleType() information tell us whether a descr
+
+# Descriptor API and CanSelfExpand() Analysis
+
+## Why Can't IsRange()/IsSingleType() Tell Us About Expansion?
+
+The existing `IsRange()` and `IsSingleType()` functions in the Descriptor API don't provide sufficient information to determine whether a descriptor can be expanded on the watch-only side because they don't capture the critical distinction between:
+
+1. **Structure information** (what `IsRange()` and `IsSingleType()` provide):
+   - `IsRange()` tells us if the descriptor can generate mult
+... [truncated]
+
+Q3: Cache copying ExportWatchOnlyWallet only copies the descriptor cache if !desc->CanSelfExpand() . Wha
+
+# Cache Copying in ExportWatchOnlyWallet
+
+## What's Stored in the Descriptor Cache?
+
+The descriptor cache stores pre-computed expansion results for descriptors that cannot be self-expanded. Looking at the code in `src/wallet/export.cpp`, when a descriptor cannot self-expand (`!w_desc.descriptor->CanSelfExpand()`), the cache is copied from the source wallet to the watch-only wallet:
+
+```cpp
+if (!w_desc.descriptor->CanSelfExpand()) {
+    DescriptorScriptPubKeyMan* desc_spkm = dynamic_cast<Descript
+... [truncated]

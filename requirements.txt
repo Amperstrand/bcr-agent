@@ -1,0 +1,16 @@
+# BCR Agent — Python Dependencies
+# 
+# Core (no external Python packages required — uses subprocess + stdlib)
+# The LLM backend is called via CLI (z-ai-web-dev-sdk or similar)
+#
+# Optional dependencies for future enhancements:
+
+# For GitHub API access (optional — currently uses page scraping)
+# PyGithub>=2.1.0
+
+# For progress bars
+# tqdm>=4.65.0
+
+# For HTTP requests (if replacing subprocess-based fetching)
+# requests>=2.31.0
+# httpx>=0.24.0

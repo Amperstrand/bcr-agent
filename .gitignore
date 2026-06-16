@@ -1,0 +1,43 @@
+# Data and results (generated at runtime)
+data/*.json
+data/*.txt
+results/*.json
+results/*.txt
+
+# Keep example data
+!data/.gitkeep
+!results/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (contains API keys)
+config.json
+
+# Logs
+*.log
+
+# OpenCode internal state
+.omo/

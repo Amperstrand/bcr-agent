@@ -1,0 +1,20 @@
+{
+  "llm": {
+    "provider": "z-ai",
+    "z_ai_path": "/usr/local/bin/z-ai",
+    "model": "glm-4-plus",
+    "thinking": true,
+    "timeout_seconds": 300
+  },
+  "agent": {
+    "max_diff_chars": 15000,
+    "max_irc_chars": 8000,
+    "max_github_chars": 4000,
+    "previous_answers_context": 4
+  },
+  "cache": {
+    "enabled": true,
+    "data_dir": "data",
+    "results_dir": "results"
+  }
+}
