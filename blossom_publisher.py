@@ -54,29 +54,31 @@ def sign_blossom_auth_event(
 ) -> dict:
     """Sign a kind 24242 Blossom auth event (BUD-11) using nak CLI.
 
-    The event authorizes a specific action (upload/delete/list) on a blob
-    with the given SHA-256 hash.
-
+    Creates and signs the event WITHOUT publishing to relays (no relay args).
     Returns the signed Nostr event as a dict.
     """
     expiration = str(int(time.time()) + expiration_seconds)
 
+    with open(nsec_file) as f:
+        nsec_hex = f.read().strip()
+
     cmd = [
         "nak", "event",
-        "--sec-file", nsec_file,
         "-k", "24242",
         "-c", f"{'Upload' if action == 'upload' else action.title()} Blob",
-        "--tag", f"t {action}",
-        "--tag", f"x {sha256_hash}",
-        "--tag", f"expiration {expiration}",
+        "-t", f"t={action}",
+        "-t", f"x={sha256_hash}",
+        "-t", f"expiration={expiration}",
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    env = os.environ.copy()
+    env["NOSTR_SECRET_KEY"] = nsec_hex
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=15, env=env)
 
     if result.returncode != 0:
-        raise RuntimeError(f"nak event (BUD-11 auth) failed: {result.stderr.strip()}")
+        raise RuntimeError(f"nak event (BUD-11 auth) failed: {result.stderr.strip()[:300]}")
 
-    # nak prints the signed event JSON to stdout
     lines = result.stdout.strip().split("\n")
     for line in reversed(lines):
         line = line.strip()

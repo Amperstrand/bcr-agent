@@ -62,15 +62,7 @@ def _publish_event(
 ) -> dict:
     """Sign and publish a Nostr event via nak CLI.
 
-    Args:
-        nsec_file: Path to file containing the hex private key (mode 0600).
-        kind: Nostr event kind.
-        content: Event content string.
-        tags: List of tag arrays, e.g. [["t","bitcoin"], ["status","success"]].
-        relays: List of relay URLs. Defaults to DEFAULT_RELAYS.
-
-    Returns:
-        dict with 'success' (bool) and 'event_id' (str) or 'error' (str).
+    Uses NOSTR_SECRET_KEY env var to pass the key (not visible in ps output).
     """
     if relays is None:
         relays = DEFAULT_RELAYS
@@ -78,33 +70,35 @@ def _publish_event(
     if not _nak_available():
         return {"success": False, "error": "nak CLI not found. Install: https://github.com/fiatjaf/nak"}
 
-    # Build nak command
+    with open(nsec_file) as f:
+        nsec_hex = f.read().strip()
+
     cmd = [
         "nak", "event",
-        "--sec-file", nsec_file,
         "-k", str(kind),
         "-c", content,
     ]
 
-    # Add tags — nak uses repeated --tag flags
     for tag in tags:
-        tag_str = " ".join(str(t) for t in tag)
-        cmd.extend(["--tag", tag_str])
+        tag_key = tag[0]
+        tag_vals = ";".join(str(t) for t in tag[1:])
+        cmd.extend(["-t", f"{tag_key}={tag_vals}"])
 
-    # Relays as positional args
     cmd.extend(relays)
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    env = os.environ.copy()
+    env["NOSTR_SECRET_KEY"] = nsec_hex
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, env=env)
 
     if result.returncode != 0:
-        return {"success": False, "error": f"nak event failed: {result.stderr.strip()}"}
+        return {"success": False, "error": f"nak event failed: {result.stderr.strip()[:300]}"}
 
-    # nak prints the event JSON to stdout on success
     try:
         event = json.loads(result.stdout.strip().split("\n")[-1])
         return {"success": True, "event_id": event.get("id", ""), "event": event}
     except (json.JSONDecodeError, IndexError):
-        return {"success": True, "event_id": "", "raw_output": result.stdout.strip()}
+        return {"success": True, "event_id": "", "raw_output": result.stdout.strip()[:200]}
 
 
 def publish_nip89_announcement(nsec_file: str, relays: list = None) -> dict:
