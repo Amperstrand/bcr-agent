@@ -228,6 +228,9 @@ def upload_to_blossom(
         "Content-Type": content_type,
         "Content-Length": str(len(file_data)),
         "X-SHA-256": sha256,
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+        "Accept": "*/*",
+        "Origin": "https://blossom.psbt.me",
     }
 
     # Add Cashu token if provided upfront
