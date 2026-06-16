@@ -61,6 +61,7 @@ write_files:
       export BCR_COMMIT_FULL="${COMMIT_FULL}"
       export SERVER_TYPE="${SERVER_TYPE}"
       export MODE="autonomous"
+      export BOT_NSEC_HEX="${BOT_NSEC_HEX}"
 
 runcmd:
   - set -ex

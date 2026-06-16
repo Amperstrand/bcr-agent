@@ -23,6 +23,14 @@ echo "  Workshop: ${WORKSHOP_ID}"
 echo "  Model:    ${MODEL}"
 echo ""
 
+# Ensure nsec file has content (cloud-init write_files can produce empty files)
+if [ -n "${BOT_NSEC_HEX:-}" ] && [ ! -s /opt/bcr-agent-config/bot_nsec ]; then
+    mkdir -p /opt/bcr-agent-config
+    echo -n "${BOT_NSEC_HEX}" > /opt/bcr-agent-config/bot_nsec
+    chmod 600 /opt/bcr-agent-config/bot_nsec
+    echo "  Wrote nsec from env (${#BOT_NSEC_HEX} chars)"
+fi
+
 # ---------------------------------------------------------------------------
 echo "=== [1/14] Installing system dependencies (incl. Bitcoin Core build deps) ==="
 apt-get update -qq

@@ -336,13 +336,16 @@ echo "[6/7] Exporting opencode session..."
 
 SESSION_EXPORT="${RESULTS_DIR}/session.json"
 if command -v opencode &>/dev/null; then
-    # opencode export writes to stdout; --sanitize redacts sensitive data
-    opencode export --sanitize > "$SESSION_EXPORT" 2>/dev/null || {
-        echo "  Note: 'opencode export' failed or not supported — skipping"
-        echo "  (session data may be available in opencode's local storage)"
-        rm -f "$SESSION_EXPORT"
-    }
-    if [ -f "$SESSION_EXPORT" ]; then
+    SESSION_ID=$(sqlite3 /root/.local/share/opencode/opencode.db "SELECT id FROM session ORDER BY time_created DESC LIMIT 1;" 2>/dev/null || echo "")
+    if [ -n "$SESSION_ID" ]; then
+        opencode export "$SESSION_ID" --sanitize > "$SESSION_EXPORT" 2>/dev/null || {
+            echo "  Note: 'opencode export' failed — skipping"
+            rm -f "$SESSION_EXPORT"
+        }
+    else
+        echo "  Note: could not find session ID — skipping export"
+    fi
+    if [ -f "$SESSION_EXPORT" ] && [ -s "$SESSION_EXPORT" ]; then
         SESSION_SIZE=$(stat --printf="%s" "$SESSION_EXPORT" 2>/dev/null || stat -f%z "$SESSION_EXPORT" 2>/dev/null || echo "?")
         echo "  Session exported: ${SESSION_EXPORT} (${SESSION_SIZE} bytes)"
     fi
@@ -358,7 +361,8 @@ echo "[7/7] Archiving artifacts to BlossomFS..."
 
 if mountpoint -q "$BLOSSOMFS_MOUNT" 2>/dev/null || \
    grep -q "$BLOSSOMFS_MOUNT" /proc/mounts 2>/dev/null; then
-    ARCHIVE_PATH="${BLOSSOMFS_MOUNT}/public/${NPUB_HEX}/servers/blossom.psbt.me/by-sha256/bcr-agent-${WORKSHOP_ID}-${MODEL}"
+    MODEL_SAFE=$(echo "${MODEL}" | tr '/' '-')
+    ARCHIVE_PATH="${BLOSSOMFS_MOUNT}/public/${NPUB_HEX}/servers/blossom.psbt.me/by-sha256/bcr-agent-${WORKSHOP_ID}-${MODEL_SAFE}"
 
     mkdir -p "$ARCHIVE_PATH" 2>/dev/null || {
         echo "  WARNING: Could not create archive directory: ${ARCHIVE_PATH}"
