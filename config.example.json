@@ -1,9 +1,8 @@
 {
   "llm": {
-    "provider": "z-ai",
-    "z_ai_path": "/usr/local/bin/z-ai",
-    "model": "glm-4-plus",
-    "thinking": true,
+    "provider": "opencode",
+    "opencode_path": "opencode",
+    "model": "zai/glm-4.6",
     "timeout_seconds": 300
   },
   "agent": {

@@ -23,10 +23,9 @@ RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 DEFAULT_CONFIG = {
     "llm": {
-        "provider": "z-ai",
-        "z_ai_path": "/usr/local/bin/z-ai",
-        "model": "glm-4-plus",
-        "thinking": True,
+        "provider": "opencode",
+        "opencode_path": "opencode",
+        "model": "zai/glm-4.6",
         "timeout_seconds": 300,
     },
     "agent": {
@@ -87,42 +86,54 @@ Think of it as writing the "definitive answer" that incorporates both human insi
 
 
 def get_llm_cli_path() -> str:
-    """Get the LLM CLI path from config."""
+    """Get the opencode CLI path from config."""
     config = load_config()
-    path = config["llm"].get("z_ai_path", "/usr/local/bin/z-ai")
-    # Also check if 'z-ai' is on PATH
+    path = config["llm"].get("opencode_path", "opencode")
     if not os.path.exists(path):
-        which = subprocess.run(["which", "z-ai"], capture_output=True, text=True)
+        which = subprocess.run(["which", "opencode"], capture_output=True, text=True)
         if which.returncode == 0:
             path = which.stdout.strip()
     return path
 
 
 def call_llm(system_prompt: str, user_prompt: str, thinking: bool = True) -> dict:
-    """Call the LLM via CLI backend."""
+    """Call the LLM via OpenCode headless mode.
+
+    Uses `opencode run` which is the z.ai Coding Plan compliant way to access
+    GLM models. OpenCode must be configured with the z.ai provider pointing to
+    https://api.z.ai/api/coding/paas/v4 (see opencode.json).
+
+    OpenCode has no separate --system flag, so system_prompt is prepended to
+    the user_prompt. In non-interactive mode, opencode auto-denies all tools
+    (bash, read, edit) and outputs only the LLM response text to stdout.
+    """
     config = load_config()
     llm_path = get_llm_cli_path()
+    model = config["llm"].get("model", "zai/glm-4.6")
     timeout = config["llm"].get("timeout_seconds", 300)
 
-    output_path = os.path.join(RESULTS_DIR, "llm_response.json")
+    # Combine system + user prompt (opencode has no --system flag)
+    full_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+
     cmd = [
-        llm_path, "chat",
-        "--prompt", user_prompt,
-        "--system", system_prompt,
-        "-o", output_path
+        llm_path, "run",
+        "--model", model,
+        full_prompt,
     ]
-    if thinking:
-        cmd.append("--thinking")
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
 
     if result.returncode != 0:
-        raise RuntimeError(f"LLM call failed: {result.stderr}")
+        raise RuntimeError(f"OpenCode LLM call failed (exit {result.returncode}): {result.stderr[:500]}")
 
-    with open(output_path) as f:
-        response = json.load(f)
+    # opencode run outputs the response text to stdout when not a TTY
+    answer_text = result.stdout.strip()
 
-    return response
+    if not answer_text:
+        raise RuntimeError("OpenCode returned empty response")
+
+    # Return in OpenAI-compatible format for compatibility with existing parsing
+    return {"choices": [{"message": {"content": answer_text}}]}
 
 
 def build_question_prompt(
