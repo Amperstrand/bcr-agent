@@ -32,7 +32,7 @@ fi
 
 NOW=$(date +%s)
 
-SERVERS_JSON=$(hcloud server list --label-selector "$LABEL" -o json 2>/dev/null || echo "[]")
+SERVERS_JSON=$(hcloud server list -l "$LABEL" -o json 2>/dev/null || echo "[]")
 
 if [ "$SERVERS_JSON" = "[]" ]; then
     exit 0
