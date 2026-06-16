@@ -18,7 +18,7 @@ WORKSHOP_ID="${1:-33300}"
 SERVER_NAME="${2:-bcr-agent-$(date +%s)}"
 MODEL="${3:-zai/glm-4.6}"
 SSH_KEY="${HCLOUD_SSH_KEY:-espen@mac}"
-SERVER_TYPE="cpx31"
+SERVER_TYPE="cpx32"
 IMAGE="ubuntu-24.04"
 LOCATION="fsn1"
 
