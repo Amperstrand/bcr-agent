@@ -35,7 +35,7 @@ fi
 echo "=== [1/14] Installing system dependencies (incl. Bitcoin Core build deps) ==="
 apt-get update -qq
 apt-get install -y -qq \
-    build-essential pkg-config libssl-dev libboost-all-dev libsqlite3-dev libevent-dev \
+    build-essential cmake pkg-config libssl-dev libboost-all-dev libsqlite3-dev libevent-dev \
     autoconf automake libtool bsdmainutils \
     python3 python3-pip git tmux curl jq ca-certificates \
     fuse3 libfuse3-dev \
