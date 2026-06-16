@@ -9,32 +9,30 @@ import re
 import os
 import subprocess
 import sys
+import urllib.request
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-# Reuse config from agent.py
-sys.path.insert(0, os.path.dirname(__file__))
-from agent import get_llm_cli_path
-
 
 def fetch_page(url: str, output_path: str) -> dict:
-    """Fetch a web page using z-ai CLI and return parsed JSON."""
+    """Fetch a web page and return structured data."""
     if os.path.exists(output_path):
         print(f"  Using cached: {output_path}")
         with open(output_path) as f:
             return json.load(f)
 
     print(f"  Fetching: {url}")
-    result = subprocess.run(
-        [get_llm_cli_path(), "function", "-n", "page_reader", "-a", json.dumps({"url": url}),
-         "-o", output_path],
-        capture_output=True, text=True, timeout=60
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to fetch {url}: {result.stderr}")
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (compatible; BCR-Agent/1.0)"
+    })
+    with urllib.request.urlopen(req, timeout=30) as response:
+        html = response.read().decode("utf-8", errors="replace")
 
-    with open(output_path) as f:
-        return json.load(f)
+    data = {"data": {"html": html, "url": url}}
+    with open(output_path, "w") as f:
+        json.dump(data, f)
+
+    return data
 
 
 def strip_html(html: str) -> str:

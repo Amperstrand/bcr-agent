@@ -11,34 +11,17 @@ Shows:
 import json
 import os
 import re
-import subprocess
 import sys
 
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 
-# Reuse config from agent.py
 sys.path.insert(0, os.path.dirname(__file__))
-from agent import get_llm_cli_path, load_config
+from agent import call_llm as agent_call_llm
 
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
-    config = load_config()
-    llm_path = get_llm_cli_path()
-    timeout = config["llm"].get("timeout_seconds", 300)
-
-    output_path = os.path.join(RESULTS_DIR, "mode_compare_llm.json")
-    cmd = [
-        llm_path, "chat",
-        "--prompt", user_prompt,
-        "--system", system_prompt,
-        "-o", output_path
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    if result.returncode != 0:
-        raise RuntimeError(f"LLM call failed: {result.stderr}")
-    with open(output_path) as f:
-        response = json.load(f)
-    return response["choices"][0]["message"]["content"]
+    response = agent_call_llm(system_prompt, user_prompt, thinking=True)
+    return response.get("choices", [{}])[0].get("message", {}).get("content", "")
 
 
 def compare_modes(workshop_id: str) -> dict:

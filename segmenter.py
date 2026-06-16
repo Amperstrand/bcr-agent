@@ -14,13 +14,9 @@ import json
 import re
 import os
 import subprocess
+import urllib.request
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-
-# Reuse config from agent.py
-import sys
-sys.path.insert(0, os.path.dirname(__file__))
-from agent import get_llm_cli_path
 
 
 def strip_html(html: str) -> str:
@@ -348,12 +344,15 @@ def fetch_github_comments(pr_number: int, output_dir: str) -> list:
     if not os.path.exists(pr_json_path):
         try:
             print(f"  Fetching GitHub PR page for #{pr_number}...")
-            result = subprocess.run(
-                [get_llm_cli_path(), "function", "-n", "page_reader", 
-                 "-a", json.dumps({"url": f"https://github.com/bitcoin/bitcoin/pull/{pr_number}"}),
-                 "-o", pr_json_path],
-                capture_output=True, text=True, timeout=60
+            req = urllib.request.Request(
+                f"https://github.com/bitcoin/bitcoin/pull/{pr_number}",
+                headers={"User-Agent": "Mozilla/5.0 (compatible; BCR-Agent/1.0)"}
             )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                html = response.read().decode("utf-8", errors="replace")
+            data = {"data": {"html": html}}
+            with open(pr_json_path, "w") as f:
+                json.dump(data, f)
         except Exception as e:
             print(f"  Warning: Could not fetch PR page: {e}")
             return comments
