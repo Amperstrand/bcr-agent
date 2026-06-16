@@ -49,6 +49,7 @@ config.json
 secrets
 secrets.*
 *secret*
+!secret_scanner.py
 *credential*
 *nsec*
 *.nsec
