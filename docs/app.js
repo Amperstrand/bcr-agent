@@ -411,7 +411,6 @@ function renderRunsList(runs) {
   });
 }
 
-let selectedWorkshopId = null;
 let currentWorkshop = null;
 let currentMode = null;
 
