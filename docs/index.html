@@ -7,36 +7,71 @@
   <meta name="description" content="AI-powered Bitcoin Core PR Review Club agent. Reads results from Nostr + Blossom.">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app">
+
     <header>
       <div class="header-left">
-        <h1>BCR Agent</h1>
-        <span class="subtitle">Bitcoin Core PR Review Club — AI Reviewer</span>
+        <button id="menu-toggle" aria-label="Toggle runs list">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="header-brand">
+          <span class="logo-mark">₿</span>
+          <h1>BCR Agent</h1>
+        </div>
+        <span class="subtitle">Bitcoin Core Review Workshop — AI Reviewer</span>
       </div>
       <div class="header-right">
+        <span id="conn-status" class="conn-badge offline">Offline</span>
         <a href="https://github.com/Amperstrand/bcr-agent" target="_blank" class="link">GitHub</a>
-        <span class="npub" title="Bot npub">npub1nfg4…8qtef</span>
+        <span class="npub" title="Bot npub hex">npub1nfg4…8qtef</span>
       </div>
     </header>
 
     <main>
+      <!-- Mobile backdrop -->
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
       <aside id="runs-list">
-        <div class="loading" id="runs-loading">Connecting to Nostr relays…</div>
+        <div class="loading" id="runs-loading">
+          <div class="connecting">
+            <div class="spinner"></div>
+            <p>Connecting to relays…</p>
+          </div>
+        </div>
       </aside>
 
       <section id="report-view">
         <div class="empty-state">
-          <p>Select a workshop run to view the full AI analysis.</p>
-          <p class="hint">Runs are fetched live from Nostr relays.<br>Report content from <a href="https://blossom.psbt.me" target="_blank">blossom.psbt.me</a></p>
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="13" y2="17"/>
+            </svg>
+          </div>
+          <p class="empty-title">Select a workshop run</p>
+          <p class="hint">Runs are fetched live from Nostr relays.<br>
+          Report content from <a href="https://blossom.psbt.me" target="_blank">blossom.psbt.me</a></p>
         </div>
       </section>
     </main>
 
     <footer>
-      <span>Powered by <a href="https://github.com/nostr-protocol/nips/blob/master/90.md" target="_blank">NIP-90 DVM</a> + <a href="https://github.com/hzrd149/blossom" target="_blank">Blossom</a> + <a href="https://opencode.ai" target="_blank">OpenCode</a> + <a href="https://z.ai" target="_blank">z.ai GLM</a></span>
+      <span>Powered by
+        <a href="https://github.com/nostr-protocol/nips/blob/master/90.md" target="_blank">NIP-90 DVM</a> +
+        <a href="https://github.com/hzrd149/blossom" target="_blank">Blossom</a> +
+        <a href="https://opencode.ai" target="_blank">OpenCode</a> +
+        <a href="https://z.ai" target="_blank">z.ai GLM</a>
+      </span>
     </footer>
   </div>
 
