@@ -102,6 +102,7 @@ def publish_results(
     cashu_token: str = None,
     blossom_server: str = "https://blossom.psbt.me",
     relays: list = None,
+    archive_dir: str = None,
 ):
     """Upload the report to Blossom and publish NIP-90 Nostr events.
 
@@ -176,8 +177,22 @@ def publish_results(
     print(f"  Nostr events published to {len(relays) if relays else 3} relays")
     print("=" * 60)
 
-    return {"report_url": report_url, "events": announce_results}
+    if archive_dir:
+        print(f"\n[4/4] Exporting artifacts to {archive_dir}...")
+        from artifact_export import export_artifacts
+        export_result = export_artifacts(
+            workshop_id=workshop_id,
+            source_dir=os.path.dirname(__file__),
+            dest_dir=archive_dir,
+            blossom_server=blossom_server,
+        )
+        if export_result["blocked"]:
+            print(f"  ⚠ {len(export_result['blocked'])} files BLOCKED (contained secrets)")
+        if export_result["redacted"]:
+            print(f"  ⚠ {len(export_result['redacted'])} files REDACTED (secrets scrubbed)")
+        print(f"  ✓ {len(export_result['clean'])} files exported safely")
 
+    return {"report_url": report_url, "events": announce_results}
 
 def main():
     parser = argparse.ArgumentParser(
@@ -211,6 +226,7 @@ def main():
     sp.add_argument("--cashu-token", help="Cashu token for paid uploads (cashuB...)")
     sp.add_argument("--blossom-server", default="https://blossom.psbt.me")
     sp.add_argument("--relays", nargs="*", default=["wss://nos.lol", "wss://relay.damus.io", "wss://relay.primal.net"])
+    sp.add_argument("--archive-dir", help="Directory to export artifacts (e.g., blossomfs mount)")
 
     # Publish command (standalone)
     sp = subparsers.add_parser("publish", help="Upload report + publish Nostr events (pipeline already run)")
@@ -219,6 +235,7 @@ def main():
     sp.add_argument("--cashu-token", help="Cashu token for paid uploads (cashuB...)")
     sp.add_argument("--blossom-server", default="https://blossom.psbt.me")
     sp.add_argument("--relays", nargs="*", default=["wss://nos.lol", "wss://relay.damus.io", "wss://relay.primal.net"])
+    sp.add_argument("--archive-dir", help="Directory to export artifacts (e.g., blossomfs mount)")
 
     args = parser.parse_args()
 
@@ -253,6 +270,7 @@ def main():
                 cashu_token=args.cashu_token,
                 blossom_server=args.blossom_server,
                 relays=args.relays,
+                archive_dir=getattr(args, 'archive_dir', None),
             )
     elif args.command == "publish":
         publish_results(
@@ -261,6 +279,7 @@ def main():
             cashu_token=args.cashu_token,
             blossom_server=args.blossom_server,
             relays=args.relays,
+            archive_dir=getattr(args, 'archive_dir', None),
         )
 
 

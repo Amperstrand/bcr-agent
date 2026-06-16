@@ -14,7 +14,7 @@
 set -euo pipefail
 
 SECRETS_FILE="${HOME}/.config/bcr-deploy/secrets"
-WORKSHOP_ID="${1:-32489}"
+WORKSHOP_ID="${1:-33300}"
 SERVER_NAME="${2:-bcr-agent-$(date +%s)}"
 SSH_KEY="${HCLOUD_SSH_KEY:-espen@mac}"
 SERVER_TYPE="cpx22"
