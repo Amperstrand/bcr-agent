@@ -11,6 +11,7 @@ set -ex
 #   MODEL             — opencode model string (default: zai/glm-4.6)
 #   BOT_NSEC_HEX      — Nostr private key (hex) for publishing
 
+export HOME="${HOME:-/root}"
 export PATH=$PATH:/usr/local/go/bin:/root/go/bin:/root/.cargo/bin
 
 WORKSHOP_ID="${WORKSHOP_ID:-33300}"
