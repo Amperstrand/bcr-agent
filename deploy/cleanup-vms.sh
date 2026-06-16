@@ -14,7 +14,7 @@
 set -euo pipefail
 
 SECRETS_FILE="${HOME}/.config/bcr-deploy/secrets"
-MAX_UPTIME_SECONDS="${BCR_MAX_UPTIME:-7200}"  # 2 hours default
+MAX_UPTIME_SECONDS="${BCR_MAX_UPTIME:-10800}"  # 3 hours default
 LABEL="bcr-agent=true"
 
 if [ ! -f "$SECRETS_FILE" ]; then

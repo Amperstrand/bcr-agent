@@ -69,6 +69,17 @@ git clone https://github.com/Amperstrand/bcr-agent.git /opt/bcr-agent
 cp /opt/bcr-agent-config/config.json /opt/bcr-agent/config.json 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
+echo "=== [6b] Capturing version and machine info ==="
+BCR_VERSION="${BCR_COMMIT:-$(cd /opt/bcr-agent && git rev-parse --short HEAD)}"
+CPU_CORES=$(nproc)
+RAM_TOTAL=$(free -h | awk '/^Mem:/{print $2}')
+DISK_TOTAL=$(df -h / | awk 'NR==2{print $2}')
+MACHINE_SPECS="${SERVER_TYPE:-unknown}, ${CPU_CORES} vCPU, ${RAM_TOTAL} RAM"
+echo "  BCR Version:  ${BCR_VERSION}"
+echo "  Machine:      ${MACHINE_SPECS}"
+echo "  Mode:         ${MODE:-autonomous}"
+
+# ---------------------------------------------------------------------------
 echo "=== [7/14] Cloning bitcoin (review-club fork) at PR branch ==="
 mkdir -p /workspace
 if [ ! -d /workspace/bitcoin ]; then
@@ -204,6 +215,9 @@ export WORKSHOP_ID='${WORKSHOP_ID}' && \
 export MODEL='${MODEL}' && \
 export NSEC_FILE='/opt/bcr-agent-config/bot_nsec' && \
 export BLOSSOMFS_MOUNT='/mnt/blossomfs' && \
+export BCR_VERSION='${BCR_VERSION}' && \
+export MACHINE_SPECS='${MACHINE_SPECS}' && \
+export MODE='${MODE:-autonomous}' && \
 opencode run \
   --model '${MODEL}' \
   --dangerously-skip-permissions \

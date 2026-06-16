@@ -147,7 +147,9 @@ cat > "$FULL_REPORT" << REPORT_HEADER
 # BCR Agent — Workshop #${WORKSHOP_ID}
 
 **Model:** ${MODEL}
-**Mode:** Autonomous (opencode)
+**Mode:** ${MODE:-autonomous}
+**Version:** [\`${BCR_VERSION:-unknown}\`](https://github.com/Amperstrand/bcr-agent/commit/${BCR_VERSION:-main})
+**Machine:** ${MACHINE_SPECS:-unknown}
 **Generated:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 ---
@@ -294,7 +296,9 @@ results = announce_completion(
     report_url='${BLOSSOM_URL}',
     metrics={
         'model': '${MODEL}',
-        'mode': 'autonomous',
+        'mode': '${MODE:-autonomous}',
+        'version': '${BCR_VERSION:-unknown}',
+        'machine': '${MACHINE_SPECS:-unknown}',
         'sections': '${SECTION_COUNT}',
         'report_bytes': '${REPORT_SIZE}',
     },
