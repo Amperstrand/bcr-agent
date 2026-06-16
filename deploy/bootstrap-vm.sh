@@ -33,7 +33,7 @@ export HCLOUD_TOKEN
 COMMIT_HASH=$(git rev-parse --short HEAD)
 COMMIT_FULL=$(git rev-parse HEAD)
 
-CLOUDINIT_FILE="$(mktemp /tmp/bcr-cloudinit-XXXXXX.yaml)"
+CLOUDINIT_FILE="/tmp/bcr-cloudinit-$$.yaml"
 
 cat > "$CLOUDINIT_FILE" << CLOUDINIT
 #cloud-config
