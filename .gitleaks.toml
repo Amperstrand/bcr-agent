@@ -1,0 +1,58 @@
+# .gitleaks.toml — Custom secret scanning rules for BCR Agent
+# These rules supplement gitleaks' built-in rules.
+# Install: brew install gitleaks (macOS) or see https://github.com/gitleaks/gitleaks
+# Run:     gitleaks protect --staged -c .gitleaks.toml
+
+title = "BCR Agent Secret Scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "nostr-nsec-bech32"
+description = "Nostr private key (nsec, bech32)"
+regex = '''nsec1[023456789acdefghjklmnpqrstuvwxyz]{58}'''
+tags = ["key", "nostr"]
+
+[[rules]]
+id = "nostr-hex-privkey"
+description = "Nostr 32-byte hex private key"
+regex = '''(?:NOSTR_PRIVATE_KEY|BOT_NSEC_HEX|nsec|privkey|private_key)["\s:=]+([a-f0-9]{64})'''
+secretGroup = 1
+tags = ["key", "nostr"]
+
+[[rules]]
+id = "cashu-token"
+description = "Cashu ecash token"
+regex = '''cashu[AB][a-zA-Z0-9+/=]{20,}'''
+tags = ["key", "cashu"]
+
+[[rules]]
+id = "zai-api-key"
+description = "Z.AI API key"
+regex = '''(?:ZAI_API_KEY|Z_AI_API_KEY|z\.ai.*key)["\s:=]+([a-f0-9]{32}\.[A-Za-z0-9]{16})'''
+secretGroup = 1
+tags = ["key", "zai"]
+
+[[rules]]
+id = "hetzner-token"
+description = "Hetzner Cloud API token"
+regex = '''(?:HCLOUD_TOKEN|HETZNER_TOKEN)["\s:=]+([A-Za-z0-9]{64})'''
+secretGroup = 1
+tags = ["key", "hetzner"]
+
+[[rules]]
+id = "github-token"
+description = "GitHub token (gho_, ghp_, github_pat_)"
+regex = '''\b(gho_|ghp_|github_pat_)[A-Za-z0-9_]{36,}\b'''
+tags = ["key", "github"]
+
+[allowlist]
+description = "Allowed false-positive paths"
+paths = [
+  '''\.gitleaks\.toml''',
+  '''\.gitignore''',
+  '''README\.md''',
+  '''config\.example\.json''',
+  '''scripts/pre-commit\.sh''',
+]

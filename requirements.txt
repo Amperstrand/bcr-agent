@@ -1,16 +1,25 @@
 # BCR Agent — Python Dependencies
-# 
-# Core (no external Python packages required — uses subprocess + stdlib)
-# The LLM backend is called via CLI (z-ai-web-dev-sdk or similar)
 #
-# Optional dependencies for future enhancements:
-
-# For GitHub API access (optional — currently uses page scraping)
-# PyGithub>=2.1.0
-
-# For progress bars
+# The core pipeline uses ONLY the Python standard library (urllib, subprocess,
+# hashlib, json, base64). No pip packages are strictly required.
+#
+# External CLI tools (installed separately, not via pip):
+#
+#   nak         — Nostr swiss-army knife (event signing + Blossom upload)
+#                 Install: https://github.com/fiatjaf/nak
+#                 Used by: nostr_publisher.py, blossom_publisher.py
+#
+#   opencode    — AI coding agent (z.ai Coding Plan compliant LLM harness)
+#                 Install: https://opencode.ai (or: curl -fsSL https://opencode.ai/install | bash)
+#                 Used by: agent.py (replaces direct z-ai CLI for z.ai compliance)
+#
+# Optional Python packages (for enhanced functionality):
+#
+# Cashu wallet (for paid Blossom uploads >1MB):
+# cashu>=0.16.0
+#
+# Python Nostr library (alternative to nak CLI):
+# pynostr>=0.7.0
+#
+# Progress bars:
 # tqdm>=4.65.0
-
-# For HTTP requests (if replacing subprocess-based fetching)
-# requests>=2.31.0
-# httpx>=0.24.0
