@@ -211,6 +211,9 @@ function parseRunFromKind6500(event) {
   const duration = getParam(tags, "duration") || getParam(tags, "total_time");
   const host = getParam(tags, "host");
   const author = getParam(tags, "author");
+  const version = getParam(tags, "version");
+  const machine = getParam(tags, "machine");
+  const model = getParam(tags, "model");
   const prInfo = extractPRInfo(text);
 
   // Blossom URL from content or output tag
@@ -250,6 +253,9 @@ function parseRunFromKind6500(event) {
     duration,
     host,
     author,
+    version,
+    machine,
+    model,
     content: text,
     rawEvent: event,
   };
@@ -297,6 +303,9 @@ function mergeRuns(events) {
         timestamp: run.timestamp,
         kind: run.kind,
         content: run.content,
+        version: run.version || null,
+        machine: run.machine || null,
+        model: run.model || null,
       };
     }
 
@@ -329,6 +338,133 @@ async function fetchReport(blossomUrl) {
 }
 
 // =========================================================================
+// Markdown: parse → sanitise → highlight → section TOC
+// =========================================================================
+
+const GITHUB_REPO_BASE = "https://github.com/Amperstrand/bcr-agent";
+
+function hasMarkdownStack() {
+  return typeof window.marked !== "undefined"
+    && typeof window.DOMPurify !== "undefined";
+}
+
+function renderMarkdown(text) {
+  if (!hasMarkdownStack()) {
+    return `<pre>${escapeHtml(text)}</pre>`;
+  }
+  marked.setOptions({ gfm: true, breaks: false });
+  const raw = marked.parse(text);
+  return DOMPurify.sanitize(raw, {
+    ADD_ATTR: ["id", "target", "rel"],
+    ADD_TAGS: ["input"],
+  });
+}
+
+function slugify(text) {
+  return String(text)
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .slice(0, 60);
+}
+
+function enhanceMarkdown(container) {
+  const headers = container.querySelectorAll("h1, h2, h3, h4");
+  const usedSlugs = new Set();
+  headers.forEach((h) => {
+    let slug = slugify(h.textContent);
+    if (!slug) slug = "section";
+    let candidate = slug;
+    let i = 1;
+    while (usedSlugs.has(candidate)) candidate = `${slug}-${i++}`;
+    usedSlugs.add(candidate);
+    h.id = candidate;
+  });
+
+  container.querySelectorAll("a").forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    if (href.startsWith("http") || href.startsWith("//")) {
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+    }
+  });
+
+  if (typeof window.hljs !== "undefined") {
+    container.querySelectorAll("pre code").forEach((block) => {
+      try { window.hljs.highlightElement(block); } catch (e) { /* ignore */ }
+    });
+  }
+}
+
+function buildTableOfContents(container) {
+  const headers = container.querySelectorAll("h2, h3");
+  if (headers.length < 3) return null;
+  const items = [];
+  headers.forEach((h) => {
+    if (!h.id) return;
+    items.push({
+      level: h.tagName.toLowerCase(),
+      id: h.id,
+      text: h.textContent.trim(),
+    });
+  });
+  if (items.length === 0) return null;
+  return items;
+}
+
+function formatModelLabel(model) {
+  if (!model) return null;
+  const tail = model.includes("/") ? model.split("/").pop() : model;
+  return tail.toUpperCase();
+}
+
+function formatVersionLink(version) {
+  if (!version) return null;
+  const hash = version.replace(/^g/, "").slice(0, 7);
+  return { hash, url: `${GITHUB_REPO_BASE}/commit/${version}` };
+}
+
+function mountTableOfContents(container, markdownEl) {
+  const items = buildTableOfContents(markdownEl);
+  if (!items) return;
+
+  const toc = document.createElement("div");
+  toc.className = "report-toc";
+
+  const toggle = document.createElement("button");
+  toggle.className = "toc-toggle";
+  toggle.type = "button";
+  toggle.innerHTML = `
+    <span class="toc-label">📑 Sections</span>
+    <span class="toc-count">${items.length}</span>
+    <span class="toc-chevron">▼</span>`;
+
+  const nav = document.createElement("nav");
+  nav.className = "toc-nav";
+  items.forEach((item) => {
+    const a = document.createElement("a");
+    a.className = `toc-link toc-${item.level}`;
+    a.href = `#${item.id}`;
+    a.textContent = item.text;
+    a.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const target = markdownEl.querySelector(`#${CSS.escape(item.id)}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.replaceState(null, "", `#${item.id}`);
+      }
+    });
+    nav.appendChild(a);
+  });
+
+  toggle.addEventListener("click", () => toc.classList.toggle("open"));
+  toc.appendChild(toggle);
+  toc.appendChild(nav);
+  container.insertBefore(toc, markdownEl);
+}
+
+// =========================================================================
 // Rendering
 // =========================================================================
 
@@ -348,8 +484,12 @@ function updateConnectionStatus(connected, total) {
 }
 
 function modeBadge(mode) {
-  const cls = mode === "blind" ? "mode-blind" : "mode-augmented";
-  const label = mode === "blind" ? "BLIND" : "AUGMENTED";
+  const cls = mode === "blind" ? "mode-blind"
+    : mode === "autonomous" ? "mode-autonomous"
+    : "mode-augmented";
+  const label = mode === "blind" ? "BLIND"
+    : mode === "autonomous" ? "AUTONOMOUS"
+    : "AUGMENTED";
   return `<span class="mode-badge ${cls}">${label}</span>`;
 }
 
@@ -422,18 +562,45 @@ async function selectWorkshop(ws, forceMode = null) {
   });
 
   const availableModes = Object.keys(ws.modes);
-  const preferMode = forceMode || (availableModes.includes("augmented") ? "augmented" : availableModes[0]);
+  const preferMode = forceMode
+    || (availableModes.includes("autonomous") ? "autonomous"
+      : availableModes.includes("augmented") ? "augmented"
+      : availableModes[0]);
   currentMode = preferMode;
   const modeData = ws.modes[preferMode];
-  const hasBoth = availableModes.length > 1;
+  const hasMultiple = availableModes.length > 1;
 
   const view = document.getElementById("report-view");
 
-  const toggleHtml = hasBoth
+  const toggleHtml = hasMultiple
     ? `<div class="mode-toggle">
          ${availableModes.map(m => `<button class="mode-btn ${m === preferMode ? "active" : ""}" data-mode="${m}">${m.toUpperCase()}</button>`).join("")}
        </div>`
     : `<div class="mode-toggle-single">${modeBadge(preferMode)}</div>`;
+
+  const envItems = [];
+  if (modeData?.version) {
+    const v = formatVersionLink(modeData.version);
+    if (v) envItems.push(
+      `<div class="env-item"><span class="env-label">Commit</span>` +
+      `<span class="env-value env-value-commit"><a href="${v.url}" target="_blank" rel="noopener">${escapeHtml(v.hash)}</a></span></div>`
+    );
+  }
+  if (modeData?.machine) {
+    envItems.push(
+      `<div class="env-item"><span class="env-label">Machine</span>` +
+      `<span class="env-value">${escapeHtml(modeData.machine)}</span></div>`
+    );
+  }
+  if (modeData?.model) {
+    envItems.push(
+      `<div class="env-item"><span class="env-label">Model</span>` +
+      `<span class="env-value">${escapeHtml(formatModelLabel(modeData.model))}</span></div>`
+    );
+  }
+  const envBarHtml = envItems.length > 0
+    ? `<div class="run-environment">${envItems.join("")}</div>`
+    : "";
 
   view.innerHTML = `
     <div class="detail-header">
@@ -447,6 +614,7 @@ async function selectWorkshop(ws, forceMode = null) {
         </div>
       </div>
       ${toggleHtml}
+      ${envBarHtml}
       <div class="detail-meta-grid">
         ${ws.prRef ? `<div class="meta-item"><span class="meta-label">PR</span><span class="meta-value">${escapeHtml(ws.prRef)}</span></div>` : ""}
         ${ws.host ? `<div class="meta-item"><span class="meta-label">Host</span><span class="meta-value">${escapeHtml(ws.host)}</span></div>` : ""}
@@ -472,7 +640,7 @@ async function selectWorkshop(ws, forceMode = null) {
     </div>
   `;
 
-  if (hasBoth) {
+  if (hasMultiple) {
     view.querySelectorAll(".mode-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const newMode = btn.dataset.mode;
@@ -493,7 +661,13 @@ async function selectWorkshop(ws, forceMode = null) {
 
   try {
     const reportText = await fetchReport(blossomUrl);
-    contentEl.innerHTML = `<pre>${escapeHtml(reportText)}</pre>`;
+    contentEl.innerHTML = "";
+    const markdownEl = document.createElement("div");
+    markdownEl.className = "markdown-body";
+    markdownEl.innerHTML = renderMarkdown(reportText);
+    enhanceMarkdown(markdownEl);
+    contentEl.appendChild(markdownEl);
+    mountTableOfContents(contentEl, markdownEl);
   } catch (e) {
     contentEl.innerHTML = `
       <div class="report-error">
