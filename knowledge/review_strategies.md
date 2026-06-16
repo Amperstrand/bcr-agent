@@ -31,3 +31,14 @@
 | Run | Workshop | Duration | Quality Notes |
 |---|---|---|---|
 | 1 | #33300 | ~24 min | All 8 answered. Build failed (timeout). Strong code reading analysis. |
+| 2 | #33300 | ~32 min | All 8 answered + fun exercise. Both fuzz binaries built (GCC + clang). 64% more content than run 1. Used background builds while reading code. Used todowrite for task tracking. |
+
+## Background Build Strategy (from Run 2)
+
+Start the fuzz build immediately in the background, then read code while it compiles:
+
+```bash
+cd /workspace/bitcoin/build && setsid make -j$(nproc) fuzz > /workspace/results/build_fuzz.log 2>&1 &
+```
+
+Use `setsid` (not just `&`) so the build survives tool timeouts. Poll with `tail -3 /workspace/results/build_fuzz.log` to check progress.

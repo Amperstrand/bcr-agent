@@ -39,3 +39,17 @@ cmake -B . -S .. -DBUILD_FUZZ_BINARY=ON -DBUILD_TESTS=ON -DENABLE_IPC=OFF
 | Run | Workshop | Build Result | Notes |
 |---|---|---|---|
 | 1 | #33300 | Partial (`test_fuzz` only) | Full `make fuzz` timed out. Cap'n Proto missing, fixed with `-DENABLE_IPC=OFF`. |
+| 2 | #33300 | ✅ Full build (GCC + clang-18) | GLM-5.2 installed cmake when missing, built both GCC and clang fuzz binaries, used background builds with `setsid`. |
+
+## Clang Fuzz Build (for actual fuzzing)
+
+The GCC build produces a working binary but without the fuzzer sanitizer. For actual fuzzing:
+
+```bash
+apt-get install -y clang-18
+CC=clang-18 CXX=clang++-18 cmake -B build-fuzz -S . \
+    -DBUILD_FUZZ_BINARY=ON -DBUILD_TESTS=ON -DENABLE_IPC=OFF
+cd build-fuzz && make -j$(nproc) fuzz
+```
+
+The clang build with `-fsanitize=fuzzer-no-link` enables libFuzzer integration. Binary at `build-fuzz/bin/fuzz`.

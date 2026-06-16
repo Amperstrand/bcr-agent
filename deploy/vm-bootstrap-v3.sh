@@ -37,7 +37,7 @@ apt-get update -qq
 apt-get install -y -qq \
     build-essential cmake pkg-config libssl-dev libboost-all-dev libsqlite3-dev libevent-dev \
     autoconf automake libtool bsdmainutils \
-    python3 python3-pip git tmux curl jq ca-certificates \
+    python3 python3-pip git tmux curl jq ca-certificates sqlite3 \
     fuse3 libfuse3-dev \
     >/dev/null 2>&1
 
