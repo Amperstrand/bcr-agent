@@ -80,6 +80,20 @@ The crash requires a specific 5-step sequence. Random mutation is unlikely to pr
 |---|---|---|---|---|---|
 | 1 | GLM-4.6 | ❌ timeout | ❌ | ❌ | 8/8, ~550 lines |
 | 2 | GLM-5.2 | ✅ GCC + clang-18 | ✅ ran cmpctblock | ❌ fuzzed 111s, no crash | 8/8, 951 lines |
+| 3 | GLM-5.2 | ✅ + Debug bitcoind | ✅ | **✅ DETERMINISTIC** | 8/8, 61KB report |
+
+## Crash Reproduction — VERIFIED (Run 3)
+
+**✅ CRASH REPRODUCED DETERMINISTICALLY** using the functional test approach.
+
+The key insight: use the functional test (`test_multiple_blocktxn_response`) against a **Debug build** of `bitcoind`, not random fuzzing. The Debug build makes `Assume()` actually abort, while release builds silently continue.
+
+Steps that worked:
+1. Build Debug bitcoind: `cmake -DCMAKE_BUILD_TYPE=Debug ...` then `make -j$(nproc) bitcoind`
+2. Revert the fix: `git revert 8b6264768030db1840041abeeaeefd6c227a2644`
+3. Rebuild incrementally (only net_processing.cpp changed — fast)
+4. Run: `test/functional/p2p_compactblocks.py`
+5. Crash at `net_processing.cpp:3335`: `Assume(nullptr)` aborts in Debug
 
 ## Common Traps for This Workshop
 
