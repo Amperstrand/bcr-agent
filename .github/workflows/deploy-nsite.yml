@@ -82,4 +82,5 @@ jobs:
           publish_relay_list: true
           publish_profile: false
           force: false
+          sync: true   # backfill servers; also avoids nsyte exit-1 when content is unchanged
           verbose: true
