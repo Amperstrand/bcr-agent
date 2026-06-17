@@ -187,6 +187,48 @@ BLOSSOMFS_WRITE_PATH="/mnt/blossomfs/public/${NPUB_HEX}/servers/blossom.psbt.me/
 mkdir -p "$BLOSSOMFS_WRITE_PATH" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
+echo "=== [11b] Pre-fetching lineage from previous runs ==="
+mkdir -p /workspace/lineage
+cd /opt/bcr-agent
+python3 -c "
+import json, urllib.request, os, sys
+
+lineage_dir = '/workspace/lineage'
+os.makedirs(lineage_dir, exist_ok=True)
+
+try:
+    with open('knowledge/learnings.jsonl') as f:
+        runs = [json.loads(line) for line in f if line.strip()]
+except Exception as e:
+    print(f'  No lineage data found: {e}')
+    sys.exit(0)
+
+for run in runs:
+    run_id = run.get('run', '?')
+    model = run.get('model', '?')
+    
+    for artifact in ['blossom_report', 'blossom_session']:
+        url = run.get(artifact)
+        if not url:
+            continue
+        fname = f'run-{run_id}-{model}-{artifact.replace(\"blossom_\", \"\")}.bin'
+        fpath = os.path.join(lineage_dir, fname)
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                with open(fpath, 'wb') as out:
+                    out.write(resp.read())
+            size = os.path.getsize(fpath)
+            print(f'  Fetched: {fname} ({size:,} bytes)')
+        except Exception as e:
+            print(f'  Skip: {fname} ({e})')
+
+print(f'  Lineage available at {lineage_dir}/')
+" 2>&1 || echo "  Lineage pre-fetch failed (non-critical, agent can fetch manually)"
+
+ls -la /workspace/lineage/ 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
 echo "=== [12/14] Setting up self-destruct timer (3h) ==="
 cat > /etc/systemd/system/bcr-self-destruct.service << 'EOF'
 [Unit]
