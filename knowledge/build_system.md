@@ -40,6 +40,26 @@ cmake -B . -S .. -DBUILD_FUZZ_BINARY=ON -DBUILD_TESTS=ON -DENABLE_IPC=OFF
 |---|---|---|---|
 | 1 | #33300 | Partial (`test_fuzz` only) | Full `make fuzz` timed out. Cap'n Proto missing, fixed with `-DENABLE_IPC=OFF`. |
 | 2 | #33300 | ✅ Full build (GCC + clang-18) | GLM-5.2 installed cmake when missing, built both GCC and clang fuzz binaries, used background builds with `setsid`. |
+| 3 | #33300 | ✅ + Debug bitcoind | Built all 3 binaries. Debug bitcoind enabled Assume() crash reproduction. |
+
+## Debug Build (for crash reproduction via functional tests)
+
+To reproduce assertion crashes (like PR #33296's `Assume()` failure), you need a **Debug build** of `bitcoind`:
+
+```bash
+cmake -B build-debug -S . -DCMAKE_BUILD_TYPE=Debug -DENABLE_IPC=OFF
+cd build-debug && make -j$(nproc) bitcoind
+```
+
+In Debug builds, `Assume()` calls `abort()` on failure. In Release/RelWithDebInfo builds, `Assume()` is a no-op. This is critical for reproducing assertion-based crashes.
+
+Then run functional tests:
+```bash
+# After reverting the fix PR
+git revert <fix_commit>
+cd build-debug && make -j$(nproc) bitcoind  # incremental rebuild
+./test/functional/p2p_compactblocks.py
+```
 
 ## Clang Fuzz Build (for actual fuzzing)
 

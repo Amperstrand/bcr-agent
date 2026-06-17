@@ -348,6 +348,28 @@ if command -v opencode &>/dev/null; then
     if [ -f "$SESSION_EXPORT" ] && [ -s "$SESSION_EXPORT" ]; then
         SESSION_SIZE=$(stat --printf="%s" "$SESSION_EXPORT" 2>/dev/null || stat -f%z "$SESSION_EXPORT" 2>/dev/null || echo "?")
         echo "  Session exported: ${SESSION_EXPORT} (${SESSION_SIZE} bytes)"
+
+        echo "  Uploading session transcript to Blossom..."
+        set +e
+        SESSION_BLOSSOM=$(python3 -c "
+import json, sys
+sys.path.insert(0, '/opt/bcr-agent')
+from blossom_publisher import upload_to_blossom
+result = upload_to_blossom(
+    file_path='${SESSION_EXPORT}',
+    nsec_file='${NSEC_FILE}',
+    server_url='${BLOSSOM_SERVER}',
+    content_type='application/json',
+)
+print(result.get('url', ''))
+" 2>&1)
+        set -e
+        if echo "$SESSION_BLOSSOM" | grep -q "blossom.psbt.me"; then
+            echo "  Session on Blossom: ${SESSION_BLOSSOM}"
+            echo "${SESSION_BLOSSOM}" > "${RESULTS_DIR}/.session_blossom_url"
+        else
+            echo "  Session upload failed (non-critical)"
+        fi
     fi
 else
     echo "  Note: opencode CLI not found — session export skipped"
