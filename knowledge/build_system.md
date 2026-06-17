@@ -46,10 +46,27 @@ cmake -B . -S .. -DBUILD_FUZZ_BINARY=ON -DBUILD_TESTS=ON -DENABLE_IPC=OFF
 The GCC build produces a working binary but without the fuzzer sanitizer. For actual fuzzing:
 
 ```bash
-apt-get install -y clang-18
+apt-get install -y clang-18 llvm-18
 CC=clang-18 CXX=clang++-18 cmake -B build-fuzz -S . \
-    -DBUILD_FUZZ_BINARY=ON -DBUILD_TESTS=ON -DENABLE_IPC=OFF
+    -DBUILD_FOR_FUZZING=ON -DSANITIZERS=fuzzer -DENABLE_IPC=OFF
 cd build-fuzz && make -j$(nproc) fuzz
 ```
 
 The clang build with `-fsanitize=fuzzer-no-link` enables libFuzzer integration. Binary at `build-fuzz/bin/fuzz`.
+
+**IMPORTANT:** `-DBUILD_FUZZ_BINARY=ON` alone produces a STUB binary (links dummy main, cannot run fuzz targets). You MUST use `-DBUILD_FOR_FUZZING=ON` for a runnable fuzzer.
+
+Run a specific target: `FUZZ=cmpctblock ./build-fuzz/bin/fuzz -runs=10000`
+
+## Background Build Pattern
+
+Start builds in background with `setsid` (survives tool timeouts):
+
+```bash
+cd /workspace/bitcoin/build && setsid make -j$(nproc) fuzz > /workspace/results/build.log 2>&1 &
+```
+
+**Monitor progress — do NOT set timeouts.** If the log is growing or .o files are appearing, the build is progressing. Let it run.
+
+Check progress: `tail -3 /workspace/results/build.log`
+Check binary: `ls -la build/bin/fuzz build-fuzz/bin/fuzz`

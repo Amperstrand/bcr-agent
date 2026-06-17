@@ -39,6 +39,7 @@ apt-get install -y -qq \
     autoconf automake libtool bsdmainutils \
     python3 python3-pip git tmux curl jq ca-certificates sqlite3 \
     fuse3 libfuse3-dev \
+    nodejs npm clang-18 llvm-18 \
     >/dev/null 2>&1
 
 # ---------------------------------------------------------------------------
@@ -199,9 +200,9 @@ WantedBy=multi-user.target
 EOF
 cat > /etc/systemd/system/bcr-self-destruct.timer << 'EOF'
 [Unit]
-Description=Self-destruct after 3 hours
+Description=Self-destruct after 4 hours
 [Timer]
-OnBootSec=3h
+OnBootSec=4h
 AccuracySec=1min
 Unit=bcr-self-destruct.service
 [Install]
@@ -209,7 +210,7 @@ WantedBy=timers.target
 EOF
 systemctl daemon-reload
 systemctl enable --now bcr-self-destruct.timer
-echo "  Timer active. VM shuts down in 3 hours."
+echo "  Timer active. VM shuts down in 4 hours."
 
 # ---------------------------------------------------------------------------
 echo "=== [13/14] Starting autonomous agent session in tmux ==="

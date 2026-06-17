@@ -100,7 +100,7 @@ IP=$(hcloud server ip "$SERVER_NAME" 2>/dev/null || echo "unknown")
 echo "  Name:      ${SERVER_NAME}"
 echo "  IP:        ${IP}"
 echo "  Commit:    ${COMMIT_HASH}"
-echo "  Self-destruct: 3 hours (via vm-bootstrap-v3.sh)"
+echo "  Self-destruct: 4 hours (via vm-bootstrap-v3.sh)"
 echo ""
 echo "=== Connect ==="
 echo "  SSH:   ssh root@${IP}"
