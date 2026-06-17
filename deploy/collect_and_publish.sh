@@ -138,9 +138,15 @@ echo "  All output files are clean — safe to publish."
 echo ""
 
 # ---------------------------------------------------------------------------
+echo "[2b] Running coverage analysis (agent answers vs IRC discussion)..."
+cd "$BCR_AGENT_DIR"
+python3 run_coverage_analysis.py "${WORKSHOP_ID}" 2>&1 || echo "  Coverage analysis failed (non-critical, continuing)"
+echo ""
+
+# ---------------------------------------------------------------------------
 # Step 3: Combine all result files into a single report
 # ---------------------------------------------------------------------------
-echo "[3/7] Building combined full report..."
+echo "[3/8] Building combined full report..."
 
 # Build the report header
 cat > "$FULL_REPORT" << REPORT_HEADER
@@ -159,6 +165,7 @@ REPORT_HEADER
 # Define the standard result files in display order
 REPORT_SECTIONS=(
     "summary.md"
+    "coverage_report.md"
     "q1.md" "q2.md" "q3.md" "q4.md"
     "q5.md" "q6.md" "q7.md" "q8.md"
     "recommendations.md"
@@ -224,6 +231,16 @@ echo ""
 # Step 4: Upload full report to Blossom
 # ---------------------------------------------------------------------------
 echo "[4/7] Uploading report to Blossom..."
+
+COST_USD=$(grep -o '\$[0-9.]*' /workspace/results/opencode_stats.txt 2>/dev/null | head -1 | tr -d '$' || echo "unknown")
+COVERAGE_RATING=$(python3 -c "
+import json,re
+try:
+    d=json.load(open('/workspace/results/${WORKSHOP_ID}_coverage_comparison.json'))
+    r=[int(re.search(r'(\d)/5',c.get('comparison','')).group(1)) for c in d.get('comparisons',[]) if re.search(r'\d/5',c.get('comparison',''))]
+    print(f'{sum(r)/len(r):.1f}/5' if r else 'pending')
+except: print('pending')
+" 2>/dev/null || echo "pending")
 
 set +e
 BLOSSOM_OUTPUT=$(python3 -c "
@@ -301,6 +318,8 @@ results = announce_completion(
         'machine': '${MACHINE_SPECS:-unknown}',
         'sections': '${SECTION_COUNT}',
         'report_bytes': '${REPORT_SIZE}',
+        'cost_usd': '${COST_USD:-unknown}',
+        'coverage_rating': '${COVERAGE_RATING:-pending}',
     },
 )
 
