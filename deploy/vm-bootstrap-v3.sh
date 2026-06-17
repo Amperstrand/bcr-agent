@@ -229,14 +229,14 @@ print(f'  Lineage available at {lineage_dir}/')
 ls -la /workspace/lineage/ 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-echo "=== [12/14] Setting up self-destruct timer (3h) ==="
+echo "=== [12/14] Setting up self-destruct timer (4h) ==="
 cat > /etc/systemd/system/bcr-self-destruct.service << 'EOF'
 [Unit]
 Description=BCR Agent Self-Destruct
 After=network-target
 [Service]
 Type=oneshot
-ExecStart=/sbin/shutdown -h now "BCR Agent: 3-hour timeout reached"
+ExecStart=/sbin/shutdown -h now "BCR Agent: 4-hour timeout reached"
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -256,6 +256,7 @@ echo "  Timer active. VM shuts down in 4 hours."
 
 # ---------------------------------------------------------------------------
 echo "=== [13/14] Starting autonomous agent session in tmux ==="
+sed "s/<WORKSHOP_ID>/${WORKSHOP_ID}/g" /opt/bcr-agent/prompts/autonomous_agent.md > /tmp/agent_prompt.md
 # The agent runs opencode with the autonomous agent prompt.
 # After it finishes, the collection/publish script runs automatically.
 tmux new-session -d -s bcr-agent "
@@ -274,7 +275,7 @@ opencode run \
   --model '${MODEL}' \
   --dangerously-skip-permissions \
   --dir /workspace \
-  \"\$(cat /opt/bcr-agent/prompts/autonomous_agent.md)\" \
+  \"\$(cat /tmp/agent_prompt.md)\" \
   2>&1 | tee /var/log/bcr-agent.log ; \
 EXIT_CODE=\$? ; \
 echo '=== Agent session complete (exit '\$EXIT_CODE'), collecting & publishing results ===' && \

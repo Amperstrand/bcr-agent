@@ -33,9 +33,9 @@
   --yellow:       #d29922;
   --yellow-dim:   rgba(210, 153, 34, 0.15);
 
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  /* Typography — system font stacks only (no web fonts, no CDN, privacy-respecting) */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Menlo', Consolas, 'Liberation Mono', monospace;
 
   /* Radii */
   --radius-sm: 6px;

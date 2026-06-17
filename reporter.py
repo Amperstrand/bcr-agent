@@ -23,7 +23,7 @@ def extract_rating(comparison_text: str) -> str:
     return "?"
 
 
-def generate_report(workshop_id: str) -> str:
+def generate_report(workshop_id: str, mode: str = "blind") -> str:
     """Generate a text report from the results."""
     # Load comparison results
     comp_path = os.path.join(RESULTS_DIR, f"{workshop_id}_comparison.json")

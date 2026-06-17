@@ -65,3 +65,9 @@ config.local.json
 
 # Cashu wallet data
 .cashu/
+
+# Screenshots / temp files
+*.png
+.playwright-mcp/
+bcr-agent-*.png
+bcr-site-*.png
