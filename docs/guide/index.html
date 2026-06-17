@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCR Agent — Guide</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked@12/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+body { background: var(--bg); color: var(--text); font-family: var(--font-sans); margin: 0; padding: 0; }
+.guide-nav { position: sticky; top: 0; z-index: 100; background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; gap: 20px; align-items: center; }
+.guide-nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.15s; }
+.guide-nav a:hover { color: var(--accent); }
+.guide-nav a.active { color: var(--accent); }
+.guide-nav .back { margin-right: auto; color: var(--text-muted); }
+.guide-container { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
+.markdown-body h1 { font-size: 28px; margin-top: 0; }
+.markdown-body h2 { margin-top: 40px; }
+.markdown-body img { max-width: 100%; }
+</style>
+</head>
+<body>
+<nav class="guide-nav">
+<a href="../" class="back">← Live Site</a>
+<a href="architecture.md">Architecture</a>
+<a href="philosophy.md">Philosophy</a>
+<a href="getting-started.md">Getting Started</a>
+<a href="research.md">Research</a>
+</nav>
+<div class="guide-container">
+<div id="content" class="markdown-body"></div>
+</div>
+<script>
+const pages = ['architecture.md','philosophy.md','getting-started.md','research.md'];
+const file = location.hash.slice(1) || 'architecture.md';
+document.querySelectorAll('.guide-nav a:not(.back)').forEach(a => {
+if (a.getAttribute('href') === file) a.classList.add('active');
+a.href = '#' + a.getAttribute('href').replace('#','');
+});
+fetch(file).then(r => r.text()).then(text => {
+const html = DOMPurify.sanitize(marked.parse(text, { gfm: true }));
+document.getElementById('content').innerHTML = html;
+document.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+document.querySelectorAll('a').forEach(a => { if (a.href.startsWith('http')) { a.target = '_blank'; a.rel = 'noopener'; }});
+}).catch(() => {
+document.getElementById('content').innerHTML = '<p>Could not load ' + file + '</p>';
+});
+window.addEventListener('hashchange', () => location.reload());
+</script>
+</body>
+</html>
