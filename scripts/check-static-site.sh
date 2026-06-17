@@ -62,12 +62,13 @@ gh_hits=0
 # Flag only ROOT-RELATIVE asset paths like href="/bcr-agent/x" or src="/bcr-agent/x".
 # Full URLs (https://amperstrand.github.io/bcr-agent/) are fine under both roots,
 # so we require a quote immediately before /bcr-agent/ to avoid prose false positives.
+# Scope to code files where asset refs actually live (not .md prose).
 while IFS= read -r line; do
   [ -z "$line" ] && continue
   yellow "WARN: $line"
   gh_hits=$((gh_hits + 1))
 done <<EOF
-$(grep -rnE '"/bcr-agent/' "$DOCS_DIR" 2>/dev/null || true)
+$(grep -rnE --include='*.html' --include='*.css' --include='*.js' '"/bcr-agent/' "$DOCS_DIR" 2>/dev/null || true)
 EOF
 
 if [ "$gh_hits" -eq 0 ]; then
@@ -91,7 +92,7 @@ while IFS= read -r line; do
   yellow "WARN: $line"
   root_abs_hits=$((root_abs_hits + 1))
 done <<EOF
-$(grep -rEn '(href|src)="\/[^/]' "$DOCS_DIR" 2>/dev/null || true)
+$(grep -rEn --include='*.html' --include='*.css' --include='*.js' '(href|src)="\/[^/]' "$DOCS_DIR" 2>/dev/null || true)
 EOF
 
 if [ "$root_abs_hits" -eq 0 ]; then
