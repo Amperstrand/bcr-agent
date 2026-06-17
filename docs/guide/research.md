@@ -77,12 +77,44 @@
 ## Agent Communication on Nostr
 
 ### MUON Protocol
-- Decentralized AI agent communication on Nostr (kinds 30901-30909)
-- Lifecycle: DISCOVER → HANDSHAKE → EXAMINE → EXCHANGE → VOUCH → CERTIFY
-- Agents discover each other via BEACON broadcasts; trust built through Trinity Test and peer vouching
-- Certification: 5+ elders from different owners co-sign certificates
-- **BCR alignment**: Under investigation — our kind 6500 events could serve as BEACONs
-- Ref: [zealchou/muon-protocol](https://github.com/zealchou/muon-protocol)
+- Decentralized AI agent communication on Nostr (kinds 30901-30913)
+- 3-layer architecture: Identity & Discovery, Content & Interaction, Trust & Governance
+- Lifecycle: DISCOVER (BEACON) → HANDSHAKE → EXAMINE (Trinity Test) → EXCHANGE (POST/REPLY) → VOUCH → CERTIFY
+- ARL (Agent Reliability Level): 0-5 with 30-day decay
+- Hard cap: 10,000 agents with Founding 50 and Arena system
+- Governance: Tribunal system with Elders (ARL 4+) and Architects (ARL 5)
+
+**BCR Alignment Analysis:**
+
+| MUON Concept | BCR Adoption | Rationale |
+|---|---|---|
+| `AGENT_CARD` (30901) | ✅ Adopt | Structured identity with capabilities, values |
+| `BEACON` (30902) | ✅ Adopt | Boot announcement — maps to our kind 6500 |
+| `POST` (30903) | ✅ Adopt | Structured reviews with thought_chain, confidence |
+| `REPLY` (30904) | ✅ Adopt | Cross-agent feedback with delta field |
+| `VOUCH` (30905) | ⚠️ Optional | Only when multi-agent ecosystem exists |
+| Trinity Test | ❌ Skip | BCR incarnations too short-lived (30-60 min) |
+| ARL System | ❌ Skip | Decay doesn't make sense for 1-run agents |
+| Governance | ❌ Skip | Overkill for BCR's scope |
+
+**Key insight**: BCR agents are ephemeral (boot → work → publish → die). MUON is designed for persistent agents that discover and interact in real-time. BCR's communication is **asynchronous** through published artifacts — like academic publishing, not conversation. Adopt MUON's event schema for structured knowledge exchange, but skip the governance layer.
+
+**MUON structured POST format** (for future BCR adoption):
+```json
+{
+  "kind": 30903,
+  "content": {
+    "title": "PR #33300: Compact Block Fuzz Harness",
+    "body": "<full review>",
+    "thought_chain": ["Read PR → grep → build → fuzz → analyze"],
+    "confidence": 0.85,
+    "open_questions": ["Is 3-peer limit sufficient for test coverage?"],
+    "references": ["blossom.psbt.me/...", "github.com/bitcoin/bitcoin/pull/33300"]
+  }
+}
+```
+
+Ref: [zealchou/muon-protocol](https://github.com/zealchou/muon-protocol) | Spec: [NIP-MUON-v0.1.md](https://github.com/zealchou/muon-protocol/blob/main/spec/NIP-MUON-v0.1.md)
 
 ### Other Nostr Agent Projects
 - **AgentStr**: Decentralized agentic apps (Routstr + Lightning + Nostr + Bitcoin)
