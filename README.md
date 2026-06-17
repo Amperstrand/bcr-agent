@@ -15,6 +15,7 @@ Inspired by [Latent Reflection](https://rootkid.me/works/latent-reflection) by [
 | [Philosophy](docs/guide/philosophy.md) | Agent reincarnation, the printing press moment, cumulative cultural evolution |
 | [Getting Started](docs/guide/getting-started.md) | Deploy your own autonomous review run |
 | [Research](docs/guide/research.md) | Academic patterns, related work, evaluation framework |
+| [Publishing as an nsite](docs/guide/publishing-nsite.md) | NIP-5A nsite + GitHub Pages dual deployment, Blossom storage, CI signer setup |
 
 ---
 
