@@ -64,7 +64,7 @@ jobs:
           echo "docs/ present with index.html. Proceeding with nsite deployment."
 
       - name: Deploy to Nostr/Blossom (NIP-5A named site)
-        uses: sandwichfarm/nsite-action@v0.5.1
+        uses: sandwichfarm/nsite-action@35466ff9509a5c063ca943d1f727f9b129a37970
         with:
           sec: ${{ secrets.NBUNK_SECRET }}
           directory: './docs'
