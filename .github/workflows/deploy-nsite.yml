@@ -1,0 +1,85 @@
+# Deploys the static site in docs/ to Nostr as a NIP-5A named nsite ("bcr-agent")
+# using Blossom storage. Runs alongside the existing GitHub Pages deployment
+# (Pages is served from docs/ via repository settings and is NOT affected here).
+#
+# Required GitHub repository secret:
+#   NBUNK_SECRET  — the nsite signer credential. This workflow feeds it to the
+#                   `sandwichfarm/nsite-action` `sec` input, which accepts an
+#                   `nsec1...` private key (passed straight to `nsyte --sec`).
+#                   For a delegated/revocable credential instead, run `nsyte ci`
+#                   interactively to mint an `nbunksec1...` and swap this step to
+#                   the action's `nbunksec` input (see README → "Publishing as an
+#                   nsite" → "Hardening the CI signer"). Never commit this value.
+#
+# Trigger: pushes to main that touch the site, the nsite config, or this workflow.
+
+name: Deploy nsite
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.nsite/**'
+      - '.github/workflows/deploy-nsite.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-nsite-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Publish docs/ as nsite "bcr-agent"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify NBUNK_SECRET is configured
+        env:
+          NBUNK_SECRET: ${{ secrets.NBUNK_SECRET }}
+        run: |
+          if [ -z "${NBUNK_SECRET}" ]; then
+            echo "::error::The NBUNK_SECRET repository secret is not set."
+            echo "::error::Set it to the nsec1... signer key (see scripts/ and README:" 
+            echo "::error::'Publishing as an nsite'). Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "NBUNK_SECRET is present (${#NBUNK_SECRET} chars)."
+
+      - name: Verify docs/ exists
+        run: |
+          if [ ! -d ./docs ]; then
+            echo "::error::docs/ directory not found in repository root."
+            exit 1
+          fi
+          if [ ! -f ./docs/index.html ]; then
+            echo "::error::docs/index.html not found."
+            exit 1
+          fi
+          echo "docs/ present with index.html. Proceeding with nsite deployment."
+
+      - name: Deploy to Nostr/Blossom (NIP-5A named site)
+        uses: sandwichfarm/nsite-action@v0.5.1
+        with:
+          sec: ${{ secrets.NBUNK_SECRET }}
+          directory: './docs'
+          name: 'bcr-agent'
+          version: 'v0.27.1'
+          relays: |
+            wss://relay.nsite.lol
+            wss://nos.lol
+            wss://relay.damus.io
+          servers: |
+            https://blossom.psbt.me
+            https://cdn.hzrd149.com
+            https://cdn.sovbit.host
+          publish_server_list: true
+          publish_relay_list: true
+          publish_profile: false
+          force: false
+          verbose: true

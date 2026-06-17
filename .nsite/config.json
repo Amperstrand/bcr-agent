@@ -1,0 +1,22 @@
+{
+  "$schema": "https://nsyte.run/schemas/config.schema.json",
+  "profile": {
+    "name": "bcr-agent",
+    "about": "AI-Powered Bitcoin Core PR Review Club Agent — reads results from Nostr + Blossom."
+  },
+  "fallback": "/index.html",
+  "publishServerList": true,
+  "publishRelayList": true,
+  "publishProfile": false,
+  "publishAppHandler": false,
+  "relays": [
+    "wss://relay.nsite.lol",
+    "wss://nos.lol",
+    "wss://relay.damus.io"
+  ],
+  "servers": [
+    "https://blossom.psbt.me",
+    "https://cdn.hzrd149.com",
+    "https://cdn.sovbit.host"
+  ]
+}

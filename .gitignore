@@ -35,6 +35,8 @@ Thumbs.db
 
 # Config (contains API keys)
 config.json
+# Keep the nsite deployment config — it holds relays/servers/profile only, no secrets.
+!.nsite/config.json
 
 # Logs
 *.log

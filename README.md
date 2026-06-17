@@ -209,6 +209,122 @@ Copy `config.example.json` to `config.json` and customize:
 
 ---
 
+## Publishing as an nsite
+
+The web UI in **`docs/`** is published through two independent channels that both serve the exact same static files:
+
+1. **GitHub Pages** — served from `docs/` at `https://amperstrand.github.io/bcr-agent/` (configured under *Settings → Pages*; no Actions workflow required). `docs/.nojekyll` disables Jekyll processing.
+2. **Nostr nsite (NIP-5A)** — the same `docs/` directory is uploaded to Blossom storage and announced as a **named nsite** called `bcr-agent` via a Nostr kind `35128` manifest.
+
+Because all local asset paths in `docs/` are relative (`style.css`, `app.js`), the site works unchanged under both the `/bcr-agent/` path and an nsite root `/`.
+
+### nsite configuration
+
+- `.nsite/config.json` — relays, Blossom servers, fallback (`/index.html`), and the `publishServerList` flag. **No secrets live here**; it is safe to commit.
+- The nsite uses these Blossom servers for redundancy (never a single backend):
+  - `https://blossom.psbt.me`
+  - `https://cdn.hzrd149.com`
+  - `https://cdn.sovbit.host`
+- Relays: `wss://relay.nsite.lol`, `wss://nos.lol`, `wss://relay.damus.io`.
+
+> Note: `blossom.psbt.me` is one of several Blossom servers used for redundancy — it is **not** the sole storage backend.
+
+### Local deployment
+
+Install the [`nsyte`](https://jsr.io/@nsyte/cli) CLI (v0.27.x; prebuilt binaries are on the [releases page](https://github.com/sandwichfarm/nsyte/releases)).
+
+**The signer key lives OUTSIDE this repository** so it can never be accidentally committed. It is stored at `~/.config/bcr-agent/nsite_nsec` (mode `0600`). The `.gitignore` also blocks `*nsec*` / `*secret*` / `*.env` patterns as a safety net, but keeping it outside the working tree is the real guarantee.
+
+```bash
+# Generate the signer once and store it outside the repo (mode 0600).
+# Reuses this repo's proven bech32 key-gen logic (see deploy/vm-bootstrap-v3.sh).
+mkdir -p ~/.config/bcr-agent && chmod 700 ~/.config/bcr-agent
+python3 - <<'PY'  # writes ~/.config/bcr-agent/nsite_nsec
+import os
+CHARSET='qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+def polymod(v):
+    g=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];c=1
+    for x in v:
+        b=c>>25;c=(c&0x1ffffff)<<5^x
+        for i in range(5): c^=g[i] if (b>>i)&1 else 0
+    return c
+hrp='nsec';d=os.urandom(32)
+def c8to5(d):
+    a=0;b=0;r=[]
+    for v in d:
+        a=(a<<8|v)&0xffffffff;b+=8
+        while b>=5:b-=5;r.append(a>>b&31)
+    return r
+d5=c8to5(d);cs=polymod([ord(x)>>5 for x in hrp]+[0]+[ord(x)&31 for x in hrp]+d5+[0,0,0,0,0,0])^1
+chk=[(cs>>5*(5-i))&31 for i in range(6)]
+open(os.path.expanduser('~/.config/bcr-agent/nsite_nsec'),'w').write('nsec1'+''.join(CHARSET[x] for x in d5+chk)+'\n')
+os.chmod(os.path.expanduser('~/.config/bcr-agent/nsite_nsec'),0o600)
+print('wrote ~/.config/bcr-agent/nsite_nsec')
+PY
+
+# Deploy docs/ as the named nsite "bcr-agent" using the stored key
+nsyte deploy ./docs --name bcr-agent --fallback=/index.html \
+  --sec "$(cat ~/.config/bcr-agent/nsite_nsec)" -i
+
+# Inspect what is published
+nsyte status --name bcr-agent --full
+
+# Diagnose connectivity / signing issues
+nsyte debug --verbose
+```
+
+### CI deployment (GitHub Actions)
+
+`.github/workflows/deploy-nsite.yml` runs on pushes to `main` that touch `docs/**`, `.nsite/**`, or the workflow itself. It deploys `docs/` via the official [`sandwichfarm/nsite-action`](https://github.com/sandwichfarm/nsite-action).
+
+**Required GitHub secret:**
+
+| Secret | Description |
+|--------|-------------|
+| `NBUNK_SECRET` | The nsite signer's **`nsec1...` private key**. The workflow feeds it to the action's `sec` input (which passes it to `nsyte --sec`). Generate it as shown above, copy the contents of `~/.config/bcr-agent/nsite_nsec`, and add it under *Settings → Secrets and variables → Actions*. **Never commit this value.** The `.gitignore` already blocks `*nsec*`, `*.env`, and `*credential*` patterns, and the key is stored outside the repo tree. See [Hardening the CI signer](#hardening-the-ci-signer) to upgrade to a revocable `nbunksec1...` later. |
+
+The workflow fails immediately with a clear `::error::` message if `NBUNK_SECRET` is missing. The existing GitHub Pages setup is untouched.
+
+#### Hardening the CI signer
+
+This workflow currently uses the action's `sec` input with the raw `nsec1...` key. GitHub encrypts secrets at rest and masks them in logs, but a raw private key is the most sensitive form of credential. For a **delegated, revocable** credential instead:
+
+1. Run `nsyte ci` interactively in a terminal where your key is in a Nostr signer / keychain — it mints an `nbunksec1...` (a NIP-46 bunker token) that is never written to disk.
+2. Replace the secret value and swap the workflow's `sec:` line back to `nbunksec:` (the action validates that input starts with `nbunksec1` and rejects raw `nsec` values).
+3. Update the secret's stored value accordingly.
+
+`nsyte ci` is interactive (Nostr Connect / bunker flow) and cannot be driven from this non-interactive setup, which is why the default here is the `nsec` via `sec`.
+
+### Validate before deploying
+
+```bash
+./scripts/check-static-site.sh
+```
+
+This checks that `docs/` and `docs/index.html` exist, flags any hardcoded `/bcr-agent/` or root-absolute asset paths that would break under nsite root serving, and verifies that every local asset referenced from `index.html` resolves on disk.
+
+### Verify after deployment
+
+After the nsite is published, **test it through an nsite gateway** to confirm files resolve from the root path `/`, not just from the GitHub Pages `/bcr-agent/` path. The current live deployment is:
+
+- **Named site:** `bcr-agent`
+- **Signer npub:** `npub19un...hs94wede` (hex `2f27e31033dc083d717155c7fa5e06124c30b3ce1c7d5adf3c59664180738a2f`)
+- **Gateway URL:** `https://16b75mch3bknau4wzx3wbxnon44dcyghrhg4e6u4955gtdn86nbcr-agent.nsite.lol/`
+
+```bash
+# Confirm assets resolve from the nsite root
+curl -sS -o /dev/null -w "%{http_code}\n" https://16b75mch3bknau4wzx3wbxnon44dcyghrhg4e6u4955gtdn86nbcr-agent.nsite.lol/
+curl -sS -o /dev/null -w "%{http_code}\n" https://16b75mch3bknau4wzx3wbxnon44dcyghrhg4e6u4955gtdn86nbcr-agent.nsite.lol/app.js
+curl -sS -o /dev/null -w "%{http_code}\n" https://16b75mch3bknau4wzx3wbxnon44dcyghrhg4e6u4955gtdn86nbcr-agent.nsite.lol/style.css
+
+# Full manifest / server-coverage check
+nsyte status --name bcr-agent --full
+```
+
+The named-site subdomain encodes the signer npub in base36 followed by `bcr-agent`. Note that Blossom server availability fluctuates — the deployment uses **three** servers for redundancy, so a single server being down does not take the nsite offline (during initial deploy `cdn.hzrd149.com` carried 100% of blobs while two other servers were intermittently unavailable).
+
+---
+
 ## Roadmap
 
 - [ ] **Multi-agent review** — Different agents with different perspectives (security, performance, correctness)
