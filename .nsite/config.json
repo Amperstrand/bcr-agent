@@ -5,10 +5,13 @@
     "about": "AI-Powered Bitcoin Core PR Review Club Agent — reads results from Nostr + Blossom."
   },
   "fallback": "/index.html",
-  "publishServerList": true,
-  "publishRelayList": true,
-  "publishProfile": false,
-  "publishAppHandler": false,
+  "publishAppHandler": true,
+  "appHandler": {
+    "id": "bcr-agent",
+    "name": "BCR Agent",
+    "description": "Bitcoin Core Review Club AI reviewer — renders reports fetched from Nostr + Blossom.",
+    "kinds": [1, 6500]
+  },
   "relays": [
     "wss://relay.nsite.lol",
     "wss://nos.lol",

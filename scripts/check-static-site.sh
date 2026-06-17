@@ -59,13 +59,15 @@ green "OK: docs/index.html exists"
 
 printf '\n%s\n' "$(bold 'Checking for hardcoded /bcr-agent/ paths...')"
 gh_hits=0
-# shellcheck disable=SC2016
+# Flag only ROOT-RELATIVE asset paths like href="/bcr-agent/x" or src="/bcr-agent/x".
+# Full URLs (https://amperstrand.github.io/bcr-agent/) are fine under both roots,
+# so we require a quote immediately before /bcr-agent/ to avoid prose false positives.
 while IFS= read -r line; do
   [ -z "$line" ] && continue
   yellow "WARN: $line"
   gh_hits=$((gh_hits + 1))
 done <<EOF
-$(grep -rn --exclude-dir='.*' '/bcr-agent/' "$DOCS_DIR" 2>/dev/null || true)
+$(grep -rnE '"/bcr-agent/' "$DOCS_DIR" 2>/dev/null || true)
 EOF
 
 if [ "$gh_hits" -eq 0 ]; then

@@ -78,9 +78,9 @@ jobs:
             https://blossom.psbt.me
             https://cdn.hzrd149.com
             https://cdn.sovbit.host
-          publish_server_list: true
-          publish_relay_list: true
-          publish_profile: false
+          use_fallback_relays: true
+          use_fallback_servers: true
+          publish_app_handler: true
           force: false
           sync: true   # backfill servers; also avoids nsyte exit-1 when content is unchanged
           verbose: true
