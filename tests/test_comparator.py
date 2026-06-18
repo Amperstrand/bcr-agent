@@ -61,3 +61,54 @@ def test_extract_segment_returns_tail_for_last_question(sample_log):
     )
     assert isinstance(seg, list)
     assert len(seg) >= 1
+
+
+# --- compare_answer_vs_irc with the LLM call mocked ---
+
+def test_compare_answer_vs_irc_returns_canned_comparison(monkeypatch):
+    # comparator.call_llm wraps the real LLM; replace it so the orchestration
+    # (prompt building, return shaping) is tested without a network/LLM call.
+    captured = {}
+
+    def fake_call_llm(system_prompt, user_prompt):
+        captured["system"] = system_prompt
+        captured["user"] = user_prompt
+        return "### Quality Rating\n4\n\n### Summary\nSolid answer."
+
+    import comparator
+    monkeypatch.setattr(comparator, "call_llm", fake_call_llm)
+
+    question = {"number": 1, "text": "What does the export RPC do?"}
+    out = comparator.compare_answer_vs_irc(
+        question=question,
+        agent_answer="It exports watch-only wallets.",
+        irc_segment="[19:00] alice: exports keys",
+    )
+
+    assert out["question_number"] == 1
+    assert out["question_text"] == "What does the export RPC do?"
+    assert "Solid answer" in out["comparison"]
+    # The prompts were actually constructed with the inputs.
+    assert "watch-only wallets" in captured["user"]
+    assert "exports keys" in captured["user"]
+    assert "What does the export RPC do?" in captured["user"]
+
+
+def test_compare_answer_vs_irc_system_prompt_sets_the_task(monkeypatch):
+    captured = {}
+
+    def fake_call_llm(system_prompt, user_prompt):
+        captured["system"] = system_prompt
+        return "ok"
+
+    import comparator
+    monkeypatch.setattr(comparator, "call_llm", fake_call_llm)
+
+    comparator.compare_answer_vs_irc(
+        question={"number": 1, "text": "q"},
+        agent_answer="a",
+        irc_segment="irc",
+    )
+    # The system prompt instructs the comparison task.
+    assert "KEY INSIGHTS" in captured["system"]
+    assert "Rate the overall quality" in captured["system"]

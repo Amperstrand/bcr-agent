@@ -34,8 +34,11 @@ jobs:
       - name: Install tooling
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest
+          pip install ruff pytest pytest-cov
       - name: Ruff (pyflakes F + syntax E9)
         run: ruff check .
-      - name: Pytest
-        run: python -m pytest tests/
+      - name: Pytest (with coverage gate)
+        run: |
+          python -m pytest tests/ \
+            --cov=scraper --cov=segmenter --cov=comparator \
+            --cov-fail-under=55 --cov-report=term-missing
