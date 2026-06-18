@@ -22,7 +22,6 @@ Usage:
   # Write sanitized content to blossomfs
 """
 
-import hashlib
 import json
 import math
 import os

@@ -7,7 +7,6 @@ Parses workshop pages into structured JSON with notes, questions, and IRC log.
 import json
 import re
 import os
-import subprocess
 import sys
 import urllib.request
 

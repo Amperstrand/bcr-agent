@@ -331,7 +331,7 @@ def run_agent(workshop_id: str, max_questions: int = None, mode: str = "blind") 
     # Import segmenter module for augmented context
     if mode == "augmented" and segmentation:
         sys.path.insert(0, os.path.dirname(__file__))
-        from segmenter import build_augmented_context, get_substantive_entries, format_segment
+        from segmenter import build_augmented_context
 
     for i, question in enumerate(questions):
         if i < start_index:

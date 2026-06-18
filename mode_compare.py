@@ -99,7 +99,7 @@ AUGMENTED: X/5"""
                 "question": blind_a["question"],
                 "comparison": comparison,
             })
-            print(f"  Done.")
+            print("  Done.")
         except Exception as e:
             print(f"  Error: {e}")
             comparisons.append({

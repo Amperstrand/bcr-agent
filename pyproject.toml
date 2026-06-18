@@ -1,0 +1,19 @@
+# Project tooling config for BCR Agent.
+# The Python pipeline uses only the standard library at runtime; these tools
+# (ruff, pytest) are dev/CI dependencies.
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+# Bug-catching rules only: F (pyflakes — undefined names, unused imports,
+# unused variables) and E9 (syntax errors). Style/formatting rules are
+# excluded on purpose so this gate stays green on legacy code and catches
+# *new* bugs rather than reformatting history.
+select = ["F", "E9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"

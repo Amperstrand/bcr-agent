@@ -55,8 +55,6 @@ def extract_irc_segment_for_question(log: list, question_text: str, question_idx
     # Find the end: next question or end of log
     end_idx = len(log)
     if question_idx < total_questions - 1:
-        # Look for the next question topic change
-        next_q_text = None  # We'd need the next question text
         # Simple heuristic: look for the host asking something new
         for i in range(start_idx + 5, len(log)):
             msg = log[i]["message"]

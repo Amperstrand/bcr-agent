@@ -52,10 +52,10 @@ def full_pipeline(workshop_id: str):
     process_workshop(workshop_id)
 
     print("\n[3/5] Running AI reviewer (blind mode)...")
-    blind_results = run_agent(workshop_id, mode="blind")
+    run_agent(workshop_id, mode="blind")
 
     print("\n[4/5] Running AI reviewer (augmented mode)...")
-    aug_results = run_agent(workshop_id, mode="augmented")
+    run_agent(workshop_id, mode="augmented")
 
     print("\n[5/5] Generating reports...")
     generate_report(workshop_id, mode="blind")
@@ -64,7 +64,7 @@ def full_pipeline(workshop_id: str):
     print("\n" + "=" * 60)
     print("PIPELINE COMPLETE")
     print("=" * 60)
-    print(f"\nResults in: bcr-agent/results/")
+    print("\nResults in: bcr-agent/results/")
     print(f"  - {workshop_id}_blind_results.json      (blind mode answers)")
     print(f"  - {workshop_id}_augmented_results.json  (augmented mode answers)")
     print(f"  - {workshop_id}_blind_report.txt        (blind mode report)")
@@ -111,7 +111,7 @@ def publish_results(
     2. Publish NIP-90 job result (kind 6500) with the report URL
     3. Publish human-visible text note (kind 1)
     """
-    from blossom_publisher import upload_to_blossom, DEFAULT_BLOSSOM_SERVER
+    from blossom_publisher import upload_to_blossom
     from nostr_publisher import announce_completion, publish_processing_status
 
     report_path = _find_report(workshop_id)
@@ -143,7 +143,7 @@ def publish_results(
     print(f"  Report URL: {report_url}")
 
     # 3. Publish Nostr announcement
-    print(f"\n[3/3] Publishing NIP-90 events to Nostr...")
+    print("\n[3/3] Publishing NIP-90 events to Nostr...")
 
     # Extract metrics from results
     metrics = {}

@@ -19,12 +19,11 @@ Usage:
 import hashlib
 import json
 import os
-import shutil
 import sys
 import time
 
 sys.path.insert(0, os.path.dirname(__file__))
-from secret_scanner import scan_file, is_blocked_file
+from secret_scanner import scan_file
 
 # --- Artifact collection ---
 
@@ -205,11 +204,11 @@ def export_artifacts(
     print(f"  Files redacted: {len(redacted)}")
     print(f"  Files blocked: {len(blocked)}")
     if blocked:
-        print(f"  BLOCKED (secrets prevented from publishing):")
+        print("  BLOCKED (secrets prevented from publishing):")
         for b in blocked:
             print(f"    ✗ {b['name']} ({b['reason']})")
     if redacted:
-        print(f"  REDACTED (secrets scrubbed before publishing):")
+        print("  REDACTED (secrets scrubbed before publishing):")
         for r in redacted:
             print(f"    ⚠ {r['name']} ({r['count']} secrets removed)")
     print(f"  Manifest: {manifest_path}")

@@ -13,7 +13,6 @@ Also extracts GitHub PR review comments for augmented mode.
 import json
 import re
 import os
-import subprocess
 import urllib.request
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -232,7 +231,6 @@ def _rebalance_interleaved(segments: dict, questions: list, log: list, host_nick
             entries_shared = []
             
             for entry in merged:
-                nick = entry["nick"]
                 msg_lower = entry["message"].lower()
                 
                 # Check for explicit question references
@@ -471,7 +469,7 @@ def process_workshop(workshop_id: str) -> tuple:
     print("\nSegmenting IRC log...")
     segmentation = segment_irc_log(log, questions, host_nick)
     
-    print(f"\nAnchors found:")
+    print("\nAnchors found:")
     for anchor in segmentation["anchors"]:
         q_num = anchor["question_number"]
         segment = segmentation["segments"].get(q_num, [])
@@ -482,7 +480,7 @@ def process_workshop(workshop_id: str) -> tuple:
         print(f"\nUnanchored questions (auto-assigned): {segmentation['unanchored_questions']}")
     
     # Print per-question summary
-    print(f"\nPer-question segments:")
+    print("\nPer-question segments:")
     for q in questions:
         segment = segmentation["segments"].get(q["number"], [])
         substantive = get_substantive_entries(segment)

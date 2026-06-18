@@ -163,10 +163,10 @@ def mint_testnut_tokens(amount_sats: int) -> str:
 
     if not status.get("paid", False) and status.get("state") != "paid":
         print(f"  ⚠ Testnut quote not yet paid. State: {status.get('state', 'unknown')}")
-        print(f"  For production, use: pip install cashu")
+        print("  For production, use: pip install cashu")
         raise RuntimeError("Testnut mint did not auto-pay the quote. Try again or supply a Cashu token manually.")
 
-    print(f"  ✓ Quote paid. Minting tokens...")
+    print("  ✓ Quote paid. Minting tokens...")
     # NOTE: Full minting requires blind signature crypto (NUT-00).
     # This is a placeholder — in production, use the cashu Python library:
     #   from cashu.wallet.wallet import Wallet
@@ -212,7 +212,7 @@ def upload_to_blossom(
     print(f"  File: {file_path} ({file_size:,} bytes, sha256: {sha256[:16]}...)")
 
     if file_size < FREE_TIER_SIZE_LIMIT:
-        print(f"  ✓ Under 1MB — free tier (no Cashu payment needed)")
+        print("  ✓ Under 1MB — free tier (no Cashu payment needed)")
 
     # Read file content
     with open(file_path, "rb") as f:
@@ -252,11 +252,11 @@ def upload_to_blossom(
     except urllib.error.HTTPError as e:
         # --- Handle 402 Payment Required ---
         if e.code == 402:
-            print(f"  Server requires payment (402)")
+            print("  Server requires payment (402)")
 
             if cashu_token:
                 # We already tried with a token — it was insufficient
-                print(f"  ✗ Provided Cashu token was insufficient")
+                print("  ✗ Provided Cashu token was insufficient")
                 raise RuntimeError(f"402 even with Cashu token. Response: {e.read().decode()[:200]}")
 
             # Parse payment requirement
@@ -264,7 +264,7 @@ def upload_to_blossom(
             print(f"  Required: {payment['amount']} {payment['unit']} from {payment['mints']}")
 
             if file_size < FREE_TIER_SIZE_LIMIT:
-                print(f"  ⚠ Unexpected 402 for <1MB file (free tier should apply)")
+                print("  ⚠ Unexpected 402 for <1MB file (free tier should apply)")
 
             # Try minting testnut tokens
             try:
@@ -275,11 +275,11 @@ def upload_to_blossom(
                     cashu_token=token, content_type=content_type,
                 )
             except NotImplementedError:
-                print(f"  ℹ Automatic Cashu minting not available.")
-                print(f"  To pay manually:")
+                print("  ℹ Automatic Cashu minting not available.")
+                print("  To pay manually:")
                 print(f"    1. Visit {payment['mints'][0] if payment['mints'] else TESTNUT_MINT}")
                 print(f"    2. Mint {payment['amount']} sats worth of tokens")
-                print(f"    3. Re-run with --cashu-token <cashuB...>")
+                print("    3. Re-run with --cashu-token <cashuB...>")
                 raise
 
         # --- Other HTTP errors ---
