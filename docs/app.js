@@ -390,11 +390,31 @@ function enhanceMarkdown(container) {
     }
   });
 
-  if (typeof window.hljs !== "undefined") {
-    container.querySelectorAll("pre code").forEach((block) => {
-      try { window.hljs.highlightElement(block); } catch (e) { /* ignore */ }
+  // highlight.js (~121 KB) is only needed when a report contains code blocks;
+  // load it on demand instead of blocking every page load. See loadHljs().
+  const codeBlocks = container.querySelectorAll("pre code");
+  if (codeBlocks.length > 0) {
+    loadHljs().then(() => {
+      if (typeof window.hljs === "undefined") return;
+      codeBlocks.forEach((block) => {
+        try { window.hljs.highlightElement(block); } catch (e) { /* ignore */ }
+      });
     });
   }
+}
+
+let _hljsPromise = null;
+function loadHljs() {
+  if (typeof window.hljs !== "undefined") return Promise.resolve();
+  if (_hljsPromise) return _hljsPromise;
+  _hljsPromise = new Promise((resolve) => {
+    const s = document.createElement("script");
+    s.src = "vendor/highlight.min.js?v=5";
+    s.onload = () => resolve();
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+  return _hljsPromise;
 }
 
 function buildTableOfContents(container) {

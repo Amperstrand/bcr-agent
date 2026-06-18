@@ -1,0 +1,76 @@
+# Daily health check for the NIP-5A nsite + GitHub Pages.
+# Pass criterion: the named nsite gateway serves current content AND its vendor
+# assets (this proves at least one Blossom server carries the blobs). GitHub Pages
+# is checked as a non-fatal warning. On failure, an issue is opened (deduplicated
+# against any existing open health-check issue).
+
+name: nsite health check
+
+on:
+  schedule:
+    - cron: '17 4 * * *'  # daily, 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Verify nsite gateways + Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check nsite + Pages
+        env:
+          NAMED: https://16b75mch3bknau4wzx3wbxnon44dcyghrhg4e6u4955gtdn86nbcr-agent.nsite.lol
+          PAGES: https://amperstrand.github.io/bcr-agent
+        run: |
+          set -u
+          FAIL=0
+          # PRIMARY — named gateway must serve current content + assets.
+          if curl -fsSL --max-time 30 "$NAMED/" | grep -q '<title>BCR Agent'; then
+            echo "named root: OK"
+          else
+            echo "::error::Named nsite gateway not serving current content"
+            FAIL=1
+          fi
+          if curl -fsS -o /dev/null --max-time 30 "$NAMED/vendor/marked.min.js"; then
+            echo "named vendor asset: OK"
+          else
+            echo "::error::Named nsite gateway not serving vendor assets (broken deploy?)"
+            FAIL=1
+          fi
+          # SECONDARY — non-fatal warning.
+          curl -fsSL --max-time 30 "$PAGES/" | grep -q '<title>BCR Agent' && echo "pages: OK" \
+            || echo "::warning::GitHub Pages check failed (non-fatal)"
+          exit "$FAIL"
+
+      - name: Open issue on failure (deduplicated)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'nsite,health-check'
+            });
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            if (open.length > 0) {
+              core.info(`Open health-check issue already exists (#${open[0].number}); commenting instead of duplicating.`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open[0].number,
+                body: `Health check still failing — ${runUrl}`
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'nsite health check failed',
+                body: `The scheduled nsite health check failed. The named gateway is not serving current content or assets.\n\nRun: ${runUrl}`,
+                labels: ['nsite', 'health-check']
+              });
+            }
